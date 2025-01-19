@@ -1,0 +1,26 @@
+:root {
+  --color-primary: #33445c;
+  --color-primary-muted: #1b2535;
+  --color-secondary: #d53f8c;
+  --color-accent: #d69e2e;
+  --color-neutral: #2d3748;
+
+  
+  --color-card-background: #0F172A;
+  --color-card-hover: var(--color-primary-muted);
+  --color-outline: #1E293B;
+  --color-background: #0F172A;
+  --color-text: #ffffff;
+
+  --sidebar-width: 200px;
+  --content-width: 900px;
+
+  --main-margin: 4px;
+  --hover-outline-size: 1px;
+  --hover-outline-radius: 300px;
+  --border-radius: 8px;
+  --font-size-base: 16px;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

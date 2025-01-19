@@ -1,0 +1,54 @@
+:root {
+    background-color: var(--color-background);
+    font-family: "Inter", serif; /*sans-serif*/
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
+}
+
+.unselectabe{
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    text-wrap: nowrap;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.outline_res {
+    background-color: var(--color-card-background);
+    border: 1px solid var(--color-outline);
+    position: relative;
+}
+
+.outline_res > .outline_res_content {
+    background-color: var(--color-card-background);
+    border-radius: inherit;
+    position: relative;
+    z-index: 2;
+}
+.outline_res::after {
+    position: absolute;
+    border-radius: inherit;
+    content: "";
+    height: calc(100% + var(--hover-outline-size) * 2); /* wtf?? */
+    inset: calc(var(--hover-outline-size) * -1);
+    width: calc(100% + var(--hover-outline-size) * 2);
+    background:  linear-gradient(#ffffff00, #ffffff00) padding-box, radial-gradient(
+        600px circle at var(--mouse-x) var(--mouse-y), 
+        var(--color-primary),
+        transparent var(--hover-outline-radius)
+    ) border-box;
+    z-index: 1;
+}
+

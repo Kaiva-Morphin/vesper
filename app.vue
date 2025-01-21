@@ -1,30 +1,8 @@
-<!-- <template>
-  <div id="background" class="w-full h-full absolute -z-10"/>
-    <NuxtPage /> <a class="bg-primary text-white font-serif">ABASczxjhfasuis</a>
-    <div id="main" class="absolute flex flex-nowrap w-full h-full justify-center overflow-scroll no-scrollbar" v-locomotivel>
-
-    <div id="sidebar_allocator" class="min-w-sidebar h-full bg-primary rounded-default flex-shrink-0">
-
-    </div>
-
-    <div id="content" class="max-w-content w-content h-[2000px] bg-secondary rounded-default flex-shrink-[1]">
-
-    </div>
-
-    <div id="unused_allocator" class="max-w-sidebar h-full bg-accent rounded-default flex-1 ">
-
-    </div>
-    </div>
-    
-</template> -->
 <template>
   <NuxtLayout>
-    <NuxtPage />
+    <NuxtPage/>
   </NuxtLayout>
 </template>
-
-
-
 
 <script lang="ts" setup>
 //import { useColorTheme } from '~/composables/useColorTheme';
@@ -40,8 +18,6 @@ const CustomTheme = {
 useInit();
 
 //useColorTheme(CustomTheme);
-
-
 import { onMounted } from 'vue';
 onMounted(() => {
   var glob_x = 0, glob_y = 0;

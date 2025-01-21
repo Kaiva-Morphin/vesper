@@ -1,24 +1,65 @@
 :root {
-  --color-primary: #33445c;
-  --color-primary-muted: #1b2535;
-  --color-secondary: #d53f8c;
+
+
+  /* ANIMATIONS */
+  --appear-animation-speed: 200ms;
+  --button-animation-speed: 150ms;
+
+
+
+
+  /* COLOR VARIABLES */
+  --color-offset: 16;
+
+  /* COLOR VALUES */
+  --color-primary-highlighted: hsl(from var(--color-primary) h calc(s + 130) calc(l + 20));
+  --color-primary-highlighted-extra: hsl(from var(--color-primary) h calc(s + 190) calc(l + 10));
+  --color-primary: #00C1FF;
+  --color-primary-right: hsl(from var(--color-primary) calc(h + var(--color-offset)) s l);
+  --color-primary-left: hsl(from var(--color-primary) calc(h - var(--color-offset)) s l);
+  --color-primary-muted: color-mix(in srgb, var(--color-primary) 60%, #000);
+  
+  --color-secondary: #3fd57d;
   --color-accent: #d69e2e;
   --color-neutral: #2d3748;
 
-  
-  --color-card-background: #0F172A;
-  --color-card-hover: var(--color-primary-muted);
-  --color-outline: #1E293B;
-  --color-background: #0F172A;
-  --color-text: #ffffff;
 
+  /* card colors */
+  --color-shadow: #010101;
+  --shadow-radius: 6px;
+  --shadow-offset: 0px 0px;
+
+  --color-background-1: #0C0C0C;
+  --color-border-1: #121212;
+  --border-radius-1: 16px;
+
+  --color-background-2: #121212;
+  --color-border-2: #181818;
+  --border-radius-2: 12px;
+
+  --color-background-3: #181818;
+  --color-border-3: #1F1F1F;
+  --border-radius-3: 8px;
+
+  
+  --color-card-background: #0C0C0C;
+  --color-card-hover: var(--color-primary-muted);
+  --color-outline: color-mix(in srgb, var(--color-card-background) 90%, #ffffff);
+  --color-background: #0F172A;
+
+  --color-text: #eeeeee;
+  --color-text-muted: color-mix(in srgb, var(--color-text) 85%, #000);
+
+  /* OTHER VARIABLES */
   --sidebar-width: 200px;
   --content-width: 900px;
 
+  --default-outline-size: 2px;
+
   --main-margin: 4px;
-  --hover-outline-size: 1px;
+  --hover-outline-size: 2px;
   --hover-outline-radius: 300px;
-  --border-radius: 8px;
+  --border-radius: 16px;
   --font-size-base: 16px;
 
   -webkit-font-smoothing: antialiased;

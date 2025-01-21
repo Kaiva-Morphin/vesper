@@ -15,6 +15,7 @@ export default defineNuxtConfig({
   css: [
     'assets/variables.css',
     'assets/style.css',
+    'assets/jet_brains.css',
   ],
   googleFonts: {
     families: {

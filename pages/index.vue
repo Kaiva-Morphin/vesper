@@ -4,7 +4,28 @@ const open = ref(true)
 </script>
 
 <template>
-  <Post>
+  <CardWide>
+      <ContentHeader>Collapsible💀</ContentHeader>
+      <ContentMainSeparator/>
+      <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+      <ContentContainer>
+        <ContentHeader>Container</ContentHeader>
+        <ContentSeparator/>
+        <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+      </ContentContainer>
+      <ContentContainer>
+        <ContentHeader>Container</ContentHeader>
+        <ContentSeparator/>
+        <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+      </ContentContainer>
+      <ContentContainer>
+        <ContentHeader>Container</ContentHeader>
+        <ContentSeparator/>
+        <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+      </ContentContainer>
+  </CardWide>
+
+  <CardWide>
     <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
     <CollapsibleRoot v-model:open="open">
       <CollapsibleTrigger><div>zxc</div></CollapsibleTrigger>
@@ -14,8 +35,40 @@ const open = ref(true)
         <div>zxc</div>
       </CollapsibleContent>
     </CollapsibleRoot>
-  </Post>
-  
+  </CardWide>
+  <CardWide>
+    <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+    <CollapsibleRoot v-model:open="open">
+      <CollapsibleTrigger><div>zxc</div></CollapsibleTrigger>
+      <CollapsibleContent class="CollapsibleContent">
+        <div>zxc</div>
+        <div>zxc</div>
+        <div>zxc</div>
+      </CollapsibleContent>
+    </CollapsibleRoot>
+  </CardWide>
+  <CardWide>
+    <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+    <CollapsibleRoot v-model:open="open">
+      <CollapsibleTrigger><div>zxc</div></CollapsibleTrigger>
+      <CollapsibleContent class="CollapsibleContent">
+        <div>zxc</div>
+        <div>zxc</div>
+        <div>zxc</div>
+      </CollapsibleContent>
+    </CollapsibleRoot>
+  </CardWide>
+  <CardWide>
+    <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</div>
+    <CollapsibleRoot v-model:open="open">
+      <CollapsibleTrigger><div>zxc</div></CollapsibleTrigger>
+      <CollapsibleContent class="CollapsibleContent">
+        <div>zxc</div>
+        <div>zxc</div>
+        <div>zxc</div>
+      </CollapsibleContent>
+    </CollapsibleRoot>
+  </CardWide>
 </template>
 
 

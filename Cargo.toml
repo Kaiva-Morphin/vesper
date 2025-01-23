@@ -1,0 +1,33 @@
+[package]
+name = "lwapi"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.217", features = ["derive"] }
+axum = {version = "0.8.1", features = ["macros", "json", "ws"]}
+tokio = {version = "1.43.0", features = ["full"] }
+serde_json = "1.0.137"
+uuid = "1.12.1"
+rand = "0.8.5"
+surrealdb = "2.1.4"
+cookie = "0.18.1"
+tracing = { version = "0.1.41", features = ["async-await"] }
+bcrypt = "0.16.0"   
+chrono = "0.4.39"
+regex = "1.11.1"
+jsonwebtoken = "9.3.0"
+oauth2 = "5.0.0"
+google-gmail1 = "6.0.0"
+reqwest = { version = "0.12.12", features = ["json"] }
+axum-extra = { version = "0.10.0", features = ["cookie"] }
+
+
+[[bin]]
+name = "reg"
+path = "src/main.rs"
+
+
+[[bin]]
+name = "calls"
+path = "src/calls_service.rs"

@@ -1,18 +1,11 @@
 services:
-  surrealdb:
-    image: surrealdb/surrealdb:latest
+  cockroachdb:
+    env_file: .env
+    image: cockroachdb/cockroach:v20.2.5
+    command: start-single-node --insecure
     restart: always
-    entrypoint:
-      - /surreal
-      - start
-      - --user
-      - $DB_USER
-      - --pass
-      - $DB_PASSWORD
-      - memory
-    env_file:
-      - .env
     ports:
-      - 8000:8000
+      - "26257:26257"
+      - "8080:8080"
     volumes:
-      - ./db_data:/data
+      - ./cockroach-data:/cockroach/cockroach-data

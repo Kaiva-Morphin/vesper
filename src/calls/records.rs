@@ -187,6 +187,8 @@ impl AppState {
         true
     }
 
+
+
     pub async fn get_visible_rooms(&self) -> Vec<RoomInfo> {
         let mut rooms = vec![];
         let mut to_delete = vec![];

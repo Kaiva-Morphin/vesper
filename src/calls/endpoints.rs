@@ -82,7 +82,7 @@ pub async fn join_room(
     if room.password == jar.get_passwd_hash() {
         //let rooms = state.rooms.read().await;
         //let room = rooms.public_rooms.get(&room_id).ok_or_else(|| StatusCode::NOT_FOUND)?;
-        successful_join().await;
+        successful_join();
         return Err(StatusCode::UNAUTHORIZED);
     } else {
         return Ok((jar, Redirect::to("/call/auth")))
@@ -92,4 +92,4 @@ pub async fn join_room(
     Err(StatusCode::INTERNAL_SERVER_ERROR)
 }
 
-pub async fn successful_join(){}
+pub fn successful_join(){}

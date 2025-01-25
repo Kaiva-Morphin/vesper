@@ -4,11 +4,12 @@ use axum::{
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
 use regex::Regex;
+use sea_orm::ConnectionTrait;
 use serde::{Deserialize, Serialize};
 use surrealdb::{engine::remote::ws::Client, Surreal};
 use std::sync::Arc;
 
-use crate::{CONTACT_ADMIN_MESSAGE, MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, MIN_PASSWORD_LENGTH, MIN_USERNAME_LENGTH};
+use crate::{AppState, CONTACT_ADMIN_MESSAGE, MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, MIN_PASSWORD_LENGTH, MIN_USERNAME_LENGTH};
 
 use super::shared::{create_token_record, Tokens, UserData, UsernameValidation};
 
@@ -63,13 +64,15 @@ impl UserData {
 }
 
 pub async fn register(
-    State(db): State<Arc<Surreal<Client>>>,
+    State(appstate): State<Arc<AppState>>,
     payload: Option<Json<RegisterBody>>
 ) -> impl IntoResponse {
     // if payload is in incorrect form
     let Some(payload) = payload else { return (StatusCode::BAD_REQUEST, "Incorrect form sent!").into_response()};
 
     if let Err(e) = payload.validate() {return (StatusCode::BAD_REQUEST, Json(e)).into_response()};
+
+    appstate.db.execute("");
 
 
     let Ok(user_data) = db.select::<Option<UserData>>(("user_data", &payload.username)).await 

@@ -3,7 +3,6 @@ use std::sync::Arc;
 use axum::{body::Body, extract::State, http::{Response, StatusCode}, response::IntoResponse, Json};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use surrealdb::{engine::remote::ws::Client, Surreal};
 
 use crate::{CONTACT_ADMIN_MESSAGE, REFRESH_TOKEN_LIFETIME, REFRESH_TOKEN_SECRET};
 

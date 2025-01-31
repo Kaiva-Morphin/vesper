@@ -6,7 +6,6 @@ use ::oauth2::{AuthorizationCode, CsrfToken, Scope, TokenResponse};
 use serde::Deserialize;
 use std::{fs, sync::Arc};
 
-mod auth;
 use auth::{oauth::{discord_oauth_client, google_oauth_client}, refresh::refresh_tokens};
 use auth::login::login;
 use auth::register::register;

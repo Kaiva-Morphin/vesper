@@ -1,34 +1,43 @@
-use diesel;
-use diesel::prelude::*;
-use dotenvy::dotenv;
-use models::users::Users;
-use std::env;
-
-pub mod models;
-pub mod schema;
-
-pub fn establish_connection() -> PgConnection {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
-}
+use std::time::Duration;
+use axum::{routing::get, Router, error_handling::HandleErrorLayer, BoxError, http::StatusCode};
+use tower::{buffer::BufferLayer, limit::RateLimitLayer, ServiceBuilder};
 
 #[tokio::main]
-async fn main() -> Result<(), ()>{
-    use self::schema::users::dsl::*;
-    let connection = &mut establish_connection();
-    let results = users
-        .filter(expires.ne(123))
-        .limit(5)
-        .select(Users::as_select())
-        .load(connection)
-        .expect("Error loading posts");
-    println!("{:#?}", results);
-    Ok(())
+async fn main() {
+    let app = Router::new()
+        .route("/1", get(handler1))
+        .route("/2", get(handler2))
+        .route_layer(
+            ServiceBuilder::new()
+            .layer(HandleErrorLayer::new(handle_too_many_requests))
+            .layer(BufferLayer::new(1024))
+            .layer(RateLimitLayer::new(1, Duration::from_secs(2)))
+        )
+        .route("/3", get(handler3));
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+        .await
+        .unwrap();
+
+    axum::serve(listener, app).await.unwrap();
 }
 
+async fn handler1() -> Result<String, StatusCode> {
+    //tokio::time::sleep(Duration::from_secs(3)).await;
+    Ok("handler1".to_owned())
+}
 
+async fn handler2() -> Result<String, StatusCode> {
+    Ok("handler2".to_owned())
+}
 
+async fn handler3() -> Result<String, StatusCode> {
+    Ok("handler3".to_owned())
+}
 
+async fn handle_too_many_requests(err: BoxError) -> (StatusCode, String) {
+    (
+        StatusCode::TOO_MANY_REQUESTS,
+        format!("To many requests: {}", err)
+    )
+}

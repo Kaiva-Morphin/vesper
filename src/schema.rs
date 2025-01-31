@@ -1,24 +1,14 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    refresh_tokens (uuid) {
+    user_data (uuid) {
         uuid -> Uuid,
-        refresh_token -> Varchar,
-        expires -> Int8,
         username -> Varchar,
+        nickname -> Varchar,
+        password -> Varchar,
+        email -> Varchar,
+        discord_id -> Nullable<Varchar>,
+        google_id -> Nullable<Varchar>,
+        created -> Int8,
     }
 }
-
-diesel::table! {
-    users (uuid) {
-        uuid -> Uuid,
-        refresh_token -> Varchar,
-        expires -> Int8,
-        username -> Varchar,
-    }
-}
-
-diesel::allow_tables_to_appear_in_same_query!(
-    refresh_tokens,
-    users,
-);

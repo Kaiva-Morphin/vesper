@@ -5,7 +5,6 @@ use regex::Regex;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use crate::{models::user_data::{CreateUserData, UserData}, shared::{checks::UsernameValidation, errors::{adapt_error, AsStatusCode}, settings::*, structs::tokens::TokenPair}, AppState};
 
 
 
@@ -13,17 +12,18 @@ use crate::{models::user_data::{CreateUserData, UserData}, shared::{checks::User
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LoginBody {
     login: String,
-    password: String
+    password: String,
+    fingerprint: String,
 }
 
-use crate::schema::user_data::dsl::*;
+use crate::{models::user_data::UserData, schema::user_data::dsl::*, shared::structs::tokens::tokens::AccessTokenResponse, AppState};
 use diesel::prelude::*;
 
 
 pub async fn login(
     State(state): State<AppState>,
     payload: Json<LoginBody>
-) -> Result<Json<TokenPair>, StatusCode> {
+) -> Result<Json<AccessTokenResponse>, StatusCode> {
 
 
     let login = payload.login.clone();

@@ -1,13 +1,8 @@
 use deadpool_diesel::postgres::{Manager, Pool as PGPool};
 use diesel::PgConnection;
-use redis::{Client, Commands, ConnectionLike, FromRedisValue, RedisError, RedisResult};
 use reqwest::StatusCode;
 
-use crate::shared::{env::*, errors::{adapt_error, AsStatusCode}};
-
-
-
-
+use crate::shared::{env::*, errors::adapt_error};
 
 
 

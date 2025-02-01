@@ -16,8 +16,14 @@ macro_rules! parsed_static_env_var {
 }
 
 lazy_static! {
+    pub static ref GOOGLE_CLIENT_ID : String = static_env_var!("GOOGLE_CLIENT_ID");
     pub static ref GOOGLE_REDIRECT_URI : String = static_env_var!("GOOGLE_REDIRECT_URI");
     pub static ref GOOGLE_CLIENT_SECRET : String = static_env_var!("GOOGLE_CLIENT_SECRET");
+
+    pub static ref DISCORD_CLIENT_ID : String = static_env_var!("DISCORD_CLIENT_ID");
+    pub static ref DISCORD_REDIRECT_URI : String = static_env_var!("DISCORD_REDIRECT_URI");
+    pub static ref DISCORD_CLIENT_SECRET : String = static_env_var!("DISCORD_CLIENT_SECRET");
+    pub static ref DISCORD_AUTH_URI : String = static_env_var!("DISCORD_AUTH_URI");
 
     pub static ref ACCESS_TOKEN_SECRET : String = static_env_var!("ACCESS_TOKEN_SECRET");
     pub static ref REFRESH_TOKEN_SECRET : String = static_env_var!("REFRESH_TOKEN_SECRET");

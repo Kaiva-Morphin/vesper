@@ -21,7 +21,7 @@ chrono = "0.4.39"
 regex = "1.11.1"
 jsonwebtoken = "9.3.0"
 
-oauth2 = "5.0.0"
+oauth2 = "4.4.2"
 google-gmail1 = "6.0.0"
 
 reqwest = { version = "0.12.12", features = ["json"] }
@@ -33,7 +33,7 @@ diesel =  { version = "2.2.6", features = ["postgres", "uuid", "serde_json"] }
 dsync = "0.1.0"
 deadpool-diesel = { version = "0.6.1", features = ["postgres", "tracing"] }
 deadpool-sync = "0.1.4"
-redis = { version = "0.28.2", features = ["r2d2", "tokio-comp", "ahash"] }
+redis = { version = "0.28.2", features = ["r2d2", "tokio-comp", "ahash", "json"] }
 r2d2 = "0.8.10"
 tower = { version = "0.5.2", features = ["full"] }
 tower-http = "0.6.2"

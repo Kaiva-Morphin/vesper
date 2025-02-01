@@ -14,10 +14,11 @@ pub struct AccessTokenPayload {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RefreshTokenPayload {
-    pub user: Uuid,
     pub rtid: Uuid,
+    pub user: Uuid,
     pub expires: u64
 }
+
 
 
 #[derive(Default, Debug, Serialize, Deserialize)]
@@ -49,3 +50,6 @@ impl TokenPair {
         Ok(Self{refresh, access})
     }
 }
+
+
+

@@ -1,11 +1,15 @@
 <template>
-  <div ref="container" class="shader-background"></div>
-  <div class="absolute h-full w-full glass"></div>
+  <div class=" h-full w-full top-0 left-0 fixed">
+    <div ref="container" class="absolute top-0 shader-background"/>
+    <div class="absolute top-0 h-full w-full glass"></div>
+  </div>
 </template>
 <style scoped>
 .glass {
   background: rgba(0, 0, 0, 0.0);
   backdrop-filter: blur(3px);
+  background-color: var(--color-primary);
+  mix-blend-mode: color;
 }
 .shader-background {
   width: 100%;
@@ -17,11 +21,22 @@
 }
 </style>
 <script>
+import EventBus from '~/utils/eventBus';
 export default {
   async mounted() {
     const fragmentShaderSource = await this.loadShaderSource('/shaders/background.glsl');
     const colorPrimary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
     this.initShader(fragmentShaderSource, colorPrimary);
+    EventBus.$on('setPrimaryColor', this.setColor);
+  },
+  data() {
+    return {
+      u_colorPrimary_location: null,
+      gl_context: null
+    }
+  },
+  beforeDestroy() {
+    EventBus.$off('setPrimaryColor', this.setColor);
   },
   methods: {
     async loadShaderSource(url) {
@@ -30,6 +45,10 @@ export default {
         throw new Error(`Failed to load shader source: ${response.statusText}`);
       }
       return response.text();
+    },
+    setColor(hex) {
+      const colorPrimaryRGB = this.hexToRgb(hex);
+      this.gl_context.uniform3fv(this.u_colorPrimary_location, colorPrimaryRGB);
     },
     hexToRgb(hex) {
       const bigint = parseInt(hex.slice(1), 16);
@@ -43,7 +62,7 @@ export default {
       const canvas = document.createElement('canvas');
       container.appendChild(canvas);
       const gl = canvas.getContext('webgl');
-
+      this.gl_context = gl;
       const vertexShaderSource = `
         attribute vec4 a_position;
         void main() {
@@ -78,6 +97,7 @@ export default {
 
       gl.useProgram(program);
       const colorPrimaryLocation = gl.getUniformLocation(program, 'u_colorPrimary');
+      this.u_colorPrimary_location = colorPrimaryLocation;
       const colorPrimaryRGB = this.hexToRgb(colorPrimary);
       gl.uniform3fv(colorPrimaryLocation, colorPrimaryRGB);
 

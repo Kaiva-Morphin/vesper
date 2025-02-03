@@ -26,12 +26,9 @@
     scrollbar-width: none;
 }
 
-
-
-
 .outline_res {
     background-color: var(--color-card-background);
-    border: var(--default-outline-size) solid var(--color-outline);
+    border: var(--default-border-size) solid var(--color-outline);
     position: relative;
 }
 
@@ -56,3 +53,11 @@
     z-index: 1;
 }
 
+.default_card {
+    padding: 0.75rem;
+    border: var(--default-border-size) solid var(--color-border-1);
+    border-radius: var(--border-radius-1);
+    background-color: var(--color-background-1);
+    position: relative;
+    box-shadow: var(--shadow-offset) var(--shadow-radius) var(--color-shadow);
+}

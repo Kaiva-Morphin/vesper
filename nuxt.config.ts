@@ -10,12 +10,16 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     'nuxt-security',
     '@nuxtjs/device',
-    '@nuxtjs/google-fonts'
+    '@nuxtjs/google-fonts',
+    '@nuxt/image'
   ],
   css: [
-    'assets/variables.css',
+    'public/variables.css',
     'assets/style.css',
     'assets/jet_brains.css',
+  ],
+  plugins: [
+    'plugins/globalTheme'
   ],
   googleFonts: {
     families: {

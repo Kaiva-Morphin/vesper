@@ -9,11 +9,20 @@
     <div class="sticky h-screen z-10 top-0 left-0 flex-auto"></div>
   </div>-->
   <div id="main" class="absolute flex flex-nowrap w-full h-full justify-center overflow-y-scroll no-scrollbar text-text antialiased -z-20 bg-dark1 f-jet scroll-smooth">
-    <BackgroundShaderNoise class="top-0 absolute h-full w-full"/>
+    <BackgroundShaderNoise/>
     <SidebarDynamic/>
-    <div id="content" class="flex p-4 m-0 w-full max-w-[1200px] flex-col gap-4 ">
+    <div id="content" class="flex p-4 m-0 w-full max-w-[960px] h-full flex-col gap-4">
       <slot />
     </div>
     <div id="unused_allocator" class="sticky h-screen z-10 top-0 left-0 flex-auto"></div>
   </div>
 </template>
+
+
+<script setup>
+import { usePageTheme } from '~/composables/usePageTheme';
+
+usePageTheme({
+  '--color-primary': '#3fd57d '
+});
+</script>

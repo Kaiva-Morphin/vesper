@@ -18,25 +18,29 @@ const isSelected = computed(() => route.path === props.link);
 
 <style>
 .sidebar_item {
-    background-color: var(--color-card-background);
-    transition: background-color 0.2s;
+  background-color: var(--color-card-background);
+  transition: background-color 0.2s;
 }
 
 .sidebar_item:hover {
-    background-color: var(--color-card-hover);
-    transition: background-color 0.2s;
+  background-color: var(--color-card-hover);
+  transition: background-color 0.2s;
+
 }
 
 .sidebar_item:hover > .outline_res_content {
-    background-color: var(--color-card-hover);
-    transition: background-color 0.2s;
-    color: #FF00FFFF;
+  background-color: var(--color-card-hover);
+  transition: background-color 0.2s;
 }
 
 .sidebar_rounding {
   border: 1px solid var(--color-outline);
   border-radius: var(--border-radius) 0 0 var(--border-radius);
 } 
+
+.sidebar_label {
+  font-size: 14px;
+}
 
 .sidebar > * > .sidebar_label {
     transition-duration: var( --appear-animation-speed);
@@ -79,7 +83,7 @@ const isSelected = computed(() => route.path === props.link);
     background: linear-gradient(70deg, rgba(255, 0, 179, 0), rgba(255, 0, 255, 0));
     padding-top: 7px;
     overflow: hidden;
-    outline-width: var(--default-outline-size);
+    outline-width: var(--default-border-size);
     transform: translate(0px, 0px);
     outline-color: color-mix(in srgb, var(--color-primary) 0%, transparent);
     /*transform: translate(0px, -5px) scale(1.05, 1.05);*/
@@ -88,8 +92,9 @@ const isSelected = computed(() => route.path === props.link);
         color-mix(in srgb, rgb(var(--color-right1)) 30%, transparent)
     );*/
     transition-duration: var(--button-animation-speed);
-    transition-property: backround transform;
+    transition-property: transform;
     animation-duration: var(--button-animation-speed);
+    color: var(--color-text-muted);
 }
 
 .sidebar_button:hover {
@@ -97,23 +102,26 @@ const isSelected = computed(() => route.path === props.link);
     outline-style: solid;
     outline-color: color-mix(in srgb, var(--color-primary) 0%, transparent);
     /*background: linear-gradient(70deg, rgba(255, 0, 179, 0.2), rgba(255, 0, 255, 0.2));*/
-    transition-property: backround transform;
+    transition-property: transform;
     background: linear-gradient(70deg, 
       color-mix(in srgb, var(--color-primary-right) 20%, transparent),
       color-mix(in srgb, var(--color-primary) 20%, transparent)
     );
+    color: var(--color-text);
 }
 
 .sidebar_button:active {
-    outline-color: color-mix(in srgb, var(--color-primary) 0%, transparent);
-    transform: scale(0.98, 0.98);
-    transition-property: backround transform;
-    background: linear-gradient(70deg, 
-      color-mix(in srgb, var(--color-primary-right) 32%, transparent),
-      color-mix(in srgb, var(--color-primary) 32%, transparent)
-    );
-    transition-duration: var(--button-animation-speed);
-    animation-duration: var(--button-animation-speed);
+  color: var(--color-text);
+  outline-color: color-mix(in srgb, var(--color-primary) 0%, transparent);
+  transform: scale(0.98, 0.98);
+  transition-property: transform;
+  background: linear-gradient(70deg, 
+    color-mix(in srgb, var(--color-primary-right) 32%, transparent),
+    color-mix(in srgb, var(--color-primary) 32%, transparent)
+  );
+  transition-duration: var(--button-animation-speed);
+  animation-duration: var(--button-animation-speed);
+  color: var(--color-text);
 }
 
 .selected_button {
@@ -127,6 +135,7 @@ const isSelected = computed(() => route.path === props.link);
     0px 2px 12px 0px color-mix(in srgb, rgb(var(--color-right0)) 50%, transparent);*/
     transition-duration: var(--button-animation-speed);
     animation-duration: var(--button-animation-speed);
+    color: var(--color-text);
 }
 
 .selected_button:hover {

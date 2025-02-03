@@ -5,7 +5,7 @@
     </ContentHeader>
     <ContentMainSeparator/>
     <ContentContainer>
-      <h1>/{{ $route.params.id }}</h1>
+      <h1>/{{ $route.params.profile_id }}</h1>
     </ContentContainer>
     <p>Sorry, the page you are looking for does not exist.</p>
   </CardCentered>

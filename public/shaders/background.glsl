@@ -127,7 +127,7 @@ void main() {
     float ht = thickness / 2.0;
 
 
-    vec3 COLOR_ACCENT = u_colorPrimary; /*vec3(0.4, 0.9, 1.0);*/
+    vec3 COLOR_ACCENT = vec3(1.0, 1.0, 1.0);//u_colorPrimary; /*vec3(0.4, 0.9, 1.0);*/
 
     color = COLOR_ACCENT * 0.9;
 

@@ -42,14 +42,14 @@ const isSelected = computed(() => route.path === props.link);
   font-size: 14px;
 }
 
-.sidebar > * > .sidebar_label {
+.minimized_sidebar > * > .sidebar_label {
     transition-duration: var( --appear-animation-speed);
     opacity: 0.0;
     overflow: clip;
     transition-property: opacity;
 }
 
-.sidebar:hover > * > .sidebar_label {
+.minimized_sidebar:hover > * > .sidebar_label {
     transition-duration: var( --appear-animation-speed);
     opacity: 1.0;
     transition-property: opacity;

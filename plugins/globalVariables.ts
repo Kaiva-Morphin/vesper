@@ -26,5 +26,5 @@ export default defineNuxtPlugin(async (nuxtApp) => {
   nuxtApp.provide('userTheme', userTheme);
   nuxtApp.provide('sidebarFullY', ref(true));
   nuxtApp.provide('sidebarLeft', ref(false));
-  nuxtApp.provide('sidebarMinimize', ref(false));
+  nuxtApp.provide('sidebarMinimized', ref(false));
 });

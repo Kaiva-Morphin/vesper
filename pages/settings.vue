@@ -11,7 +11,7 @@ color.value = b;
 
 const sidebarY = useNuxtApp().$sidebarFullY;
 const sidebarLeft = useNuxtApp().$sidebarLeft;
-const sidebarMinimize = useNuxtApp().$sidebarMinimize;
+const sidebarMinimized = useNuxtApp().$sidebarMinimized;
 const userTheme = useNuxtApp().$userTheme; 
 
 const setCSSVariable = (event, key) => {
@@ -87,7 +87,7 @@ const swp = () => {
       </div>  
       <div>
         <label for="sidebarToggle">Minimize sidebar: </label>
-        <input type="checkbox" id="sidebarToggle" v-model="sidebarMinimize" />
+        <input type="checkbox" id="sidebarToggle" v-model="sidebarMinimized" />
       </div> 
 
       
@@ -95,7 +95,7 @@ const swp = () => {
       <div>
         <p>Sidebar is <strong>{{ sidebarY ? 'Full-height' : 'Fixed' }}</strong></p>
         <p>Sidebar is on <strong>{{ sidebarLeft ? 'Left' : 'Right' }}</strong></p>
-        <p>Sidebar is <strong>{{ sidebarMinimize ? 'Minimized' : 'Full-sized' }}</strong></p>
+        <p>Sidebar is <strong>{{ sidebarMinimized ? 'Minimized' : 'Full-sized' }}</strong></p>
       </div>
     </ContentContainer>
   </CardWide>

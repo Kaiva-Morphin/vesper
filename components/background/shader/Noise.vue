@@ -7,9 +7,12 @@
 <style scoped>
 .glass {
   background: rgba(0, 0, 0, 0.0);
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(4px); 
+  
+  transition: background-color var(--interpolation-speed) var(--interpolation-method);
+
   background-color: var(--color-primary);
-  mix-blend-mode: color;
+  mix-blend-mode: overlay;
 }
 .shader-background {
   width: 100%;
@@ -21,22 +24,17 @@
 }
 </style>
 <script>
-import EventBus from '~/utils/eventBus';
 export default {
   async mounted() {
     const fragmentShaderSource = await this.loadShaderSource('/shaders/background.glsl');
     const colorPrimary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
     this.initShader(fragmentShaderSource, colorPrimary);
-    EventBus.$on('setPrimaryColor', this.setColor);
   },
   data() {
     return {
       u_colorPrimary_location: null,
       gl_context: null
     }
-  },
-  beforeDestroy() {
-    EventBus.$off('setPrimaryColor', this.setColor);
   },
   methods: {
     async loadShaderSource(url) {

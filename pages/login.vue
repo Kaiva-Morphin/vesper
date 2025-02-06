@@ -4,8 +4,8 @@
       
 
       <VesperFullLogoAdapt class="m-8 w-48"/>
-      <ContentTextInput placeholder=" email/login"></ContentTextInput>
-      <ContentTextInput placeholder=" password"></ContentTextInput>
+      <ContentTextInput placeholder="email/login"></ContentTextInput>
+      <ContentTextInput placeholder="password"></ContentTextInput>
       <ContentBorderButton disabled>Log in</ContentBorderButton>
       <div class="h-fit w-full flex justify-between flex-row">
         <div><NuxtLink to="/forgot_password" class="text-[var(--color-text-muted)] text-center w-full">Forgot password?</NuxtLink></div>
@@ -21,9 +21,9 @@
 <script setup>
 await preloadComponents('VesperFullLogo')
 await preloadComponents('VesperFullLogoAdapt')
-definePageMeta({
+/*definePageMeta({
   themeOverride: {
     '--color-primary': '#e74c3c',
   },
-});
+});*/
 </script>

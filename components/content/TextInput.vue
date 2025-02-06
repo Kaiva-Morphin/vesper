@@ -5,7 +5,7 @@
 
 <style>
 .custom_input {
-  padding: 5px 5px;
+  padding: 5px 10px;
   border: none;
   border-radius: var(--border-radius);
   outline-color: var(--color-primary);
@@ -18,7 +18,7 @@
   background-color: #00000000
 }
 .custom_input:focus {
-  padding: 5px 5px;
+  padding: 5px 10px;
   border: none;
   border-radius: var(--border-radius);
   outline-color: var(--color-primary);

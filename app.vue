@@ -5,9 +5,28 @@
 </template>
 
 <script lang="ts" setup>
-//import { useColorTheme } from '~/composables/useColorTheme';
-import { useInit } from '~/composables/init';
+import { usePageTheme } from '~/composables/usePageTheme';
+await usePageTheme();
+import { useNuxtApp, useRoute, watchEffect, onMounted } from '#imports';
+const route = useRoute();
+const userTheme = useNuxtApp().$userTheme as Ref<Record<string, string>>;
+onMounted(() => {
+    watchEffect(() => {
+      const pageTheme = (route.meta.themeOverride as Record<string, string>) || {};
+      console.log("Custom page theme: ", pageTheme);
+      const finalTheme = { ...userTheme.value, ...pageTheme };
+      console.log("Applying page-specific theme");
+      const root = document.documentElement;
+      Object.entries(finalTheme).forEach(([key, value]) => {
+        root.style.setProperty(key, value);
+      });
+    });
+  });
+</script>
 
+
+/*
+import { useInit } from '~/composables/init';
 const CustomTheme = {
   primary: '#805ad5',
   secondary: '#d53f8c',
@@ -51,8 +70,8 @@ onMounted(() => {
   }
 
   interpolate();
-});
-</script>
+});*/
+
 
 
 <style>

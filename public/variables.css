@@ -1,18 +1,16 @@
 :root {
-
-
   /* ANIMATIONS */
   --appear-animation-speed: 200ms;
   --button-animation-speed: 150ms;
-
-
+  --interpolation-speed: 0.1s;
+  --interpolation-method: ease-out;
   /* COLOR VARIABLES */
   --color-offset: 16;
 
   /* COLOR VALUES */
-  --color-primary-highlighted: hsl(from var(--color-primary) h calc(s + 130) calc(l + 20));
-  --color-primary-highlighted-extra: hsl(from var(--color-primary) h calc(s + 190) calc(l + 10));
-  --color-primary: #A4A484; /*#00fffb;*/
+  --color-primary-highlighted: hsl(from var(--color-primary) h calc(s + 10) calc(l + 20));
+  --color-primary-highlighted-extra: hsl(from var(--color-primary) h calc(s + 15) calc(l + 10));
+  --color-primary: #00fffb;/*#A4A484;*/
   --color-primary-right: hsl(from var(--color-primary) calc(h + var(--color-offset)) s l);
   --color-primary-left: hsl(from var(--color-primary) calc(h - var(--color-offset)) s l);
   --color-primary-muted: color-mix(in srgb, var(--color-primary) 60%, #000);
@@ -21,6 +19,7 @@
   --color-accent: #d69e2e;
   --color-neutral: #2d3748;
 
+  --color-test: #3fd57d;
 
   /* card colors */
   --color-shadow: #010101;

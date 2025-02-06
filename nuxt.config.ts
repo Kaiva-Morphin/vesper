@@ -1,9 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   app: {
-    pageTransition: { name: 'page', mode: 'out-in' }
+    //pageTransition: { name: 'settings', mode: 'out-in' }
   },
   modules: [
     '@nuxtjs/tailwindcss',
@@ -19,7 +19,7 @@ export default defineNuxtConfig({
     'assets/jet_brains.css',
   ],
   plugins: [
-    'plugins/globalTheme'
+    'plugins/globalVariables'
   ],
   googleFonts: {
     families: {

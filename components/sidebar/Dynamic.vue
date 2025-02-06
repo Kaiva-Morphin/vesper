@@ -1,6 +1,8 @@
 <template>
-  <div id="sidebar_allocator" class="sticky h-screen z-10 top-0 left-0 flex-auto min-w-[12rem]"> <!-- min-w-[48px] -->
-    <div id="sidebar" class="flex flex-col z-10 absolute no-scrollbar top-0 right-0 h-screen overflow-scroll static_sidebar"> <!-- sidebar -->
+  <div id="sidebar_allocator" :class="['sticky h-screen z-10 top-0 left-0 flex-auto', useNuxtApp().$sidebarLeft.value ? 'min-w-[48px]' : 'min-w-[12rem]']"> <!-- min-w-[48px] {{useNuxtApp().$sidebarLeft ? {'min-w-[48px]'} : {'min-w-[12rem]'}}}-->
+    <div id="sidebar" 
+    
+    :class="['flex flex-col z-10 absolute no-scrollbar top-0 right-0 h-screen overflow-scroll', useNuxtApp().$sidebarLeft.value ? 'sidebar' : 'static_sidebar']"> <!-- sidebar {{useNuxtApp().$sidebarLeft ? 'sidebar' : 'static_sidebar'}}-->
         <VesperFullLogoAdapt class="m-2"/>
         <div class="sidebar_separator"></div>
         <SidebarItem text="Home" link="/" icon="ci:house-01"></SidebarItem>
@@ -13,7 +15,7 @@
         <SidebarItem text="Services" link="/services" icon="ci:main-component"></SidebarItem>
         <div class="sidebar_separator"></div>
         <SidebarItem text="File sender" link="/file_sender" icon="ci:file-upload"></SidebarItem>
-        <div class="h-full"></div>
+        <div v-if="useNuxtApp().$sidebarFullY.value" class="h-full"></div>
         <div class="sidebar_separator"></div>
         <SidebarItem text="Login" link="/login" icon="ci:user-add"></SidebarItem>
         <SidebarItem text="User" link="/user" icon="ci:user"></SidebarItem>
@@ -24,7 +26,6 @@
 </template>
 
 <script lang="ts" setup>
-
 </script>
 
 <style>

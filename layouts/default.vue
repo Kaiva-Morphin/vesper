@@ -19,10 +19,3 @@
 </template>
 
 
-<script setup>
-import { usePageTheme } from '~/composables/usePageTheme';
-
-usePageTheme({
-  '--color-primary': '#3fd57d '
-});
-</script>

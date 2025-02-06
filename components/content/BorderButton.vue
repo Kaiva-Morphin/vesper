@@ -32,8 +32,8 @@ const props = defineProps({
   cursor: pointer;
   outline-offset: 0px;
   transform: scale(1);
+  background-color: #00000000;
   transition: background-color 0.2s, color 0.2s, outline-offset 0.1s, outline-color 0.1s, transform 0.1s;
-  background-color: #00000000
 }
 
 .custom-button:hover {

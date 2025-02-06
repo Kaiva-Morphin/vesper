@@ -40,7 +40,12 @@
 </template>
 
 <script lang="ts" setup>
-
+function joinRoom() {
+  return;
+}
+function roomName() {
+  return;
+}
 </script>
 
 <style>

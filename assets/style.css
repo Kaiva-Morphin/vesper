@@ -7,6 +7,16 @@
     font-style: normal;
 }
 
+/** {transition: all var(--interpolation-speed) var(--interpolation-method);}*/
+
+.undraggable {
+    user-drag: none;
+    -webkit-user-drag: none;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
 .unselectabe{
     -webkit-touch-callout: none;
     -webkit-user-select: none;

@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{auth::endpoints::shared::get_user_agent, shared::{settings::ACCESS_TOKEN_LIFETIME, structs::tokens::{cookies::TokenCookie, tokens::{AccessTokenEncoder, AccessTokenPayload, AccessTokenResponse}}}, AppState};
+use crate::{auth::endpoints::shared::get_user_agent, shared::{settings::ACCESS_TOKEN_LIFETIME, structs::tokens::{cookies::TokenCookie, tokens::{TokenEncoder, AccessTokenPayload, AccessTokenResponse}}}, AppState};
 
 #[derive(Serialize, Deserialize)]
 pub struct RefreshBody {
@@ -19,7 +19,6 @@ pub async fn refresh_tokens(
     headers: HeaderMap,
     payload: Json<RefreshBody>,
 ) -> Result<(CookieJar, Json<AccessTokenResponse>), (CookieJar, StatusCode)> {
-    
     let Ok(rtid) = jar.get_rtid() else {return Err((jar.rm_rtid(), StatusCode::UNAUTHORIZED))};   
     let record = state.tokens.pop_refresh(rtid);
     let Ok(record) = record else {return Err((jar, StatusCode::INTERNAL_SERVER_ERROR))};
@@ -36,7 +35,7 @@ pub async fn refresh_tokens(
             created: now,
             lifetime: ACCESS_TOKEN_LIFETIME
         };
-        let Ok(access_token) = AccessTokenEncoder::encode(access_payload) else {return Err((jar, StatusCode::UNAUTHORIZED))};
+        let Ok(access_token) = TokenEncoder::encode_access(access_payload) else {return Err((jar, StatusCode::UNAUTHORIZED))};
         state.tokens.set_refresh(record).map_err(|v|(jar.clone(), v))?;
         Ok((
             jar.put_rtid(rtid),
@@ -48,3 +47,4 @@ pub async fn refresh_tokens(
         Err((jar, StatusCode::UNAUTHORIZED)) 
     }
 }
+

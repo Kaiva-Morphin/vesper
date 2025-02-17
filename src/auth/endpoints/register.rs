@@ -8,11 +8,11 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{models::user_data::{CreateUserData, UserData}, shared::{errors::{adapt_error, AsStatusCode}, settings::*, structs::tokens::{cookies::TokenCookie, tokens::{AccessTokenEncoder, AccessTokenPayload, AccessTokenResponse, RefreshTokenRecord}}}, AppState};
+use crate::{models::user_data::{CreateUserData, UserData}, shared::{errors::{adapt_error, AsStatusCode}, settings::*, structs::tokens::{cookies::TokenCookie, tokens::{TokenEncoder, AccessTokenPayload, AccessTokenResponse, RefreshTokenRecord}}}, AppState};
 
 use crate::auth::checks::username::is_username_available;
 
-use super::shared::get_user_agent;
+use super::shared::{get_user_agent, process_tokens};
 
 
 
@@ -28,34 +28,45 @@ pub const PASSWORD_REGEX : &'static str = r"^[A-Za-z0-9_\-+=\$#~@*;:<>/\\|!]+$";
 pub const EMAIL_REGEX : &'static str = r"^[^\s@]+@[^\s@]+\.[^\s@]+$";
 pub const USERNAME_REGEX : &'static str = r"^[a-zA-Z0-9_]+$";
 
-pub trait UsernameValidation {
+use lazy_static::lazy_static;
+
+lazy_static!(
+    pub static ref COMPILED_USERNAME_REGEX : Regex = Regex::new(USERNAME_REGEX).expect("Can't compile username regex!");
+    pub static ref COMPILED_EMAIL_REGEX : Regex = Regex::new(EMAIL_REGEX).expect("Can't compile email regex!");
+    pub static ref COMPILED_PASSWORD_REGEX : Regex = Regex::new(PASSWORD_REGEX).expect("Can't compile password regex!");
+);
+
+pub trait RegisterValidations {
     fn is_username_valid(&self) -> bool;
+    fn is_email_valid(&self) -> bool;
+    fn is_password_valid(&self) -> bool;
 }
 
-impl UsernameValidation for String {
+impl RegisterValidations for String {
     fn is_username_valid(&self) -> bool {
-        let re = Regex::new(USERNAME_REGEX).unwrap();
-        re.is_match(self)
+        let len = self.chars().count();
+        COMPILED_USERNAME_REGEX.is_match(self) &&
+            len >= MIN_USERNAME_LENGTH &&
+            len <= MAX_USERNAME_LENGTH
+    }
+    fn is_email_valid(&self) -> bool {
+        COMPILED_EMAIL_REGEX.is_match(self)
+    }
+    fn is_password_valid(&self) -> bool {
+        let len = self.chars().count();
+        COMPILED_PASSWORD_REGEX.is_match(self) &&
+            len >= MIN_PASSWORD_LENGTH &&
+            len <= MAX_PASSWORD_LENGTH
     }
 }
 
+
 impl RegisterBody {
     fn validate(&self) -> Result<(), StatusCode> {
-        if !self.username.is_username_valid(){return Err(StatusCode::UNAUTHORIZED);}
-        
-        let re = Regex::new(PASSWORD_REGEX).unwrap();
-        if !re.is_match(self.password.as_str()){return Err(StatusCode::UNAUTHORIZED);}
-        // Password must include only latin symbols, numbers and '_-+=$#~@*;:<>/\\|'
-        let re = Regex::new(EMAIL_REGEX).unwrap();
-        if !re.is_match(self.email.as_str()) {return Err(StatusCode::UNAUTHORIZED);}
-
-        let username_len = self.username.chars().count();
-        if username_len < MIN_USERNAME_LENGTH {return Err(StatusCode::UNAUTHORIZED);}
-        if username_len > MAX_USERNAME_LENGTH {return Err(StatusCode::UNAUTHORIZED);}
-        let password_len = self.password.chars().count();
-        if password_len < MIN_PASSWORD_LENGTH {return Err(StatusCode::UNAUTHORIZED);}
-        if password_len > MAX_PASSWORD_LENGTH {return Err(StatusCode::UNAUTHORIZED);}
-        Ok(())
+        if self.username.is_username_valid() &&
+            self.email.is_email_valid() &&
+            self.password.is_password_valid() {return Ok(())}
+        Err(StatusCode::UNAUTHORIZED)
     }
 }
 
@@ -108,50 +119,26 @@ pub async fn get_criteria() -> Json<RegisterCriteria> {
 }
 
 
-// todo: do not use Vec<String>!
 pub async fn register(
     State(state): State<AppState>,
     jar: CookieJar,
     headers: HeaderMap,
-    payload: Json<RegisterBody>,
+    Json(register_body): Json<RegisterBody>,
 ) -> Result<(CookieJar, Json<AccessTokenResponse>), StatusCode> {
-    if !is_username_available(&state.postgre, payload.username.clone()).await? {return Err(StatusCode::CONFLICT)};
-    let _ = payload.validate()?;
-    let user = CreateUserData::from_register(&payload)?;
-    let rtid = Uuid::new_v4();
-    
-    let token_record = RefreshTokenRecord{
-        rtid,
-        user: user.uuid,
-        fingerprint: payload.fingerprint.clone(),
-        user_agent: get_user_agent(&headers),
-        ip: "Undefined".to_string() // TODO! can be provided after nginx????  println!("\n\n\n{:?}", headers.get("x-forwarded-for"));  println!("\n\n\n{:?}", headers.get("x-real-ip"));
-    };
-    
-    let access_payload = AccessTokenPayload{
-        user: user.uuid,
-        created: Utc::now().timestamp(),
-        lifetime: ACCESS_TOKEN_LIFETIME
-    };
-
-    let access_token = AccessTokenEncoder::encode(access_payload)?;
+    //if !is_username_available(&state.postgre, register_body.username.clone()).await? {return Err(StatusCode::CONFLICT)};
+    let _ = register_body.validate()?;
+    let user = CreateUserData::from_register(&register_body)?;
+    let user_uuid = user.uuid;
     let _ = state.postgre.interact(move |conn| {
         UserData::create(conn, &user).map_err(|e|{
             if let diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _) = e {
-                StatusCode::UNAUTHORIZED
+                StatusCode::CONFLICT
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
             })
     }).await?;
-    state.tokens.set_refresh(token_record)?;
-
-    Ok((
-        jar.put_rtid(rtid),
-        Json(AccessTokenResponse{
-        access_token: access_token,
-        expires_at: Utc::now().timestamp() + ACCESS_TOKEN_LIFETIME as i64
-    })))
+    process_tokens(jar, &state, user_uuid, register_body.fingerprint, get_user_agent(&headers)).await
 }
 
 

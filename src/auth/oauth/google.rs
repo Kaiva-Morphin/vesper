@@ -1,10 +1,11 @@
 use std::env;
 
-use axum::{extract::Query, response::{IntoResponse, Redirect}};
+use axum::{extract::{Query, State}, response::{IntoResponse, Redirect}};
 use oauth2::{basic::BasicClient, AuthUrl, AuthorizationCode, Client, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope, TokenResponse, TokenUrl};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
-use crate::shared::env::{GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI};
-use super::shared::{AuthCallback, UserInfo};
+use crate::{shared::{env::{CALLBACK_REDIRECT_URI, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI}, replace_err::ReplaceErr}, AppState};
+use super::shared::{AuthCallback, UserInfo, DISCORD_PROVIDER, GOOGLE_PROVIDER, PROVIDER_KEY};
 
 
 pub fn google_oauth_client() -> Result<BasicClient, oauth2::url::ParseError> {
@@ -18,28 +19,26 @@ pub fn google_oauth_client() -> Result<BasicClient, oauth2::url::ParseError> {
 }
 
 
-pub async fn google_login() -> impl IntoResponse {
-    let client = google_oauth_client().unwrap();
-    let (auth_url, _csrf_token) = client
+pub async fn google_login(State(state): State<AppState>) -> Result<Redirect, StatusCode> {
+    let (auth_url, csrf_token) = state.google_client
         .authorize_url(CsrfToken::new_random)
         .add_scope(Scope::new("openid".to_string()))
         .add_scope(Scope::new("email".to_string()))
         .add_scope(Scope::new("profile".to_string()))
         .url();
-    Redirect::temporary(auth_url.to_string().as_str())
+    state.tokens.set_crfs(csrf_token.secret(), GOOGLE_PROVIDER.to_string())?;
+    Ok(Redirect::temporary(auth_url.to_string().as_str()))
 }
 
 
 
 
-pub async fn google_callback(Query(params): Query<AuthCallback>) -> impl IntoResponse {
-    let client = google_oauth_client().unwrap();
+pub async fn google_callback(client: BasicClient, code: String) -> Result<GoogleUserInfo, StatusCode> {
     let token = client
-        .exchange_code(AuthorizationCode::new(params.code))
+        .exchange_code(AuthorizationCode::new(code))
         .request_async(::oauth2::reqwest::async_http_client)
-        .await
-        .unwrap();
-    format!("Access Token: {:?}\n Info: {:?}", token, fetch_google_user_info(token.access_token().secret()).await)
+        .await.replace_err(StatusCode::NOT_ACCEPTABLE)?;
+    Ok(fetch_google_user_info(token.access_token().secret()).await.replace_err(StatusCode::INTERNAL_SERVER_ERROR)?)
 }
 
 
@@ -52,6 +51,8 @@ pub struct GoogleUserInfo {
     given_name: String,
     name: String
 }
+
+
 
 impl Into<UserInfo> for GoogleUserInfo {
     fn into(self) -> UserInfo {

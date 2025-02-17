@@ -4,7 +4,7 @@ use redis::{Client, Commands, FromRedisValue, RedisError, RedisResult};
 use reqwest::StatusCode;
 use uuid::Uuid;
 
-use crate::shared::{env::REDIS_URL, errors::{adapt_error, AsStatusCode}, settings::{MAX_LIVE_SESSIONS, REFRESH_TOKEN_LIFETIME}, structs::tokens::tokens::RefreshTokenRecord};
+use crate::{auth::oauth::shared::CRFS_LIFETIME, shared::{env::REDIS_URL, errors::{adapt_error, AsStatusCode}, settings::{MAX_LIVE_SESSIONS, REFRESH_TOKEN_LIFETIME}, structs::tokens::tokens::RefreshTokenRecord}};
 
 use super::vars::REDIS_TOKEN_DB;
 
@@ -27,6 +27,8 @@ impl AsStatusCode for RedisError {
 
 const REFRESH_TOKEN_PREFIX : &'static str = "RTID";
 const USER_TOKEN_PAIR_PREFIX : &'static str = "UTPP";
+const CRFS_TOKEN_PREFIX : &'static str = "CRFS";
+//const TEMPORARY_USERDATA_TOKEN_PREFIX : &'static str = "TMPR";
 
 fn rtid_to_key(rtid: Uuid) -> String{
     format!("{}::{}", REFRESH_TOKEN_PREFIX, rtid)
@@ -36,6 +38,13 @@ fn user_to_key(user: Uuid) -> String{
     format!("{}::{}", USER_TOKEN_PAIR_PREFIX, user)
 }
 
+fn crfs_to_key(crfs: &String) -> String{
+    format!("{}::{}", CRFS_TOKEN_PREFIX, crfs)
+}
+
+/*fn tmpr_to_key(tmpr: Uuid) -> String{
+    format!("{}::{}", TEMPORARY_USERDATA_TOKEN_PREFIX, tmpr)
+}*/
 
 
 impl RedisTokens {
@@ -102,4 +111,54 @@ impl RedisTokens {
         let _: Result<(), RedisError> = conn.del(rtid_key);
         Err(StatusCode::UNAUTHORIZED)
     }
+
+    pub fn set_crfs(
+        &self,
+        crfs: &String,
+        provider: String
+    ) -> Result<(), StatusCode> {
+        let mut conn = self.pool.get().map_err(adapt_error)?;
+        let _ : () = conn.set_ex(crfs_to_key(crfs), provider, CRFS_LIFETIME).map_err(adapt_error)?;
+        Ok(())
+    }
+
+    pub fn get_crfs(
+        &self,
+        crfs: &String
+    ) -> Result<Option<String>, StatusCode> {
+        let mut conn = self.pool.get().map_err(adapt_error)?;
+        let v : Option<String> = conn.get(crfs_to_key(crfs)).map_err(adapt_error)?;
+        Ok(v)
+    }
+
+    pub fn pop_crfs(
+        &self,
+        crfs: &String
+    ) -> Result<Option<String>, StatusCode> {
+        let mut conn = self.pool.get().map_err(adapt_error)?;
+        let crfs_key = crfs_to_key(crfs);
+        let v : Option<String> = conn.get(crfs_key.clone()).map_err(adapt_error)?;
+        let _ : () = conn.del(crfs_key).map_err(adapt_error)?;
+        Ok(v)
+    }
+
+    /*pub fn set_tmpr(
+        &self,
+        tmpr: Uuid
+    ) -> Result<(), StatusCode> {
+        let mut conn = self.pool.get().map_err(adapt_error)?;
+        let _ : () = conn.set_ex(tmpr_to_key(tmpr), tmpr.to_string(), CRFS_LIFETIME).map_err(adapt_error)?;
+        Ok(())
+    }
+
+    pub fn pop_tmpr(
+        &self,
+        tmpr: Uuid
+    ) -> Result<Option<String>, StatusCode> {
+        let mut conn = self.pool.get().map_err(adapt_error)?;
+        let tmpr_key = tmpr_to_key(tmpr);
+        let v : Option<String> = conn.get(tmpr_key.clone()).map_err(adapt_error)?;
+        let _ : () = conn.del(tmpr_key).map_err(adapt_error)?;
+        Ok(v)
+    }*/
 }

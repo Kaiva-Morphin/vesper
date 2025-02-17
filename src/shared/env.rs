@@ -16,6 +16,8 @@ macro_rules! parsed_static_env_var {
 }
 
 lazy_static! {
+    pub static ref CALLBACK_REDIRECT_URI : String = static_env_var!("CALLBACK_REDIRECT_URI");
+
     pub static ref GOOGLE_CLIENT_ID : String = static_env_var!("GOOGLE_CLIENT_ID");
     pub static ref GOOGLE_REDIRECT_URI : String = static_env_var!("GOOGLE_REDIRECT_URI");
     pub static ref GOOGLE_CLIENT_SECRET : String = static_env_var!("GOOGLE_CLIENT_SECRET");
@@ -27,6 +29,7 @@ lazy_static! {
 
     pub static ref ACCESS_TOKEN_SECRET : String = static_env_var!("ACCESS_TOKEN_SECRET");
     pub static ref REFRESH_TOKEN_SECRET : String = static_env_var!("REFRESH_TOKEN_SECRET");
+    pub static ref TEMPORARY_USERDATA_TOKEN_SECRET : String = static_env_var!("TEMPORARY_USERDATA_TOKEN_SECRET");
 
     pub static ref REDIS_URL : String = static_env_var!("REDIS_URL");
     pub static ref REDIS_PORT : u32 = parsed_static_env_var!("REDIS_PORT");

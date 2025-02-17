@@ -6,7 +6,7 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::shared::{env::{ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET}, errors::{adapt_error, AsStatusCode}, settings::{ACCESS_TOKEN_LIFETIME, REFRESH_TOKEN_LIFETIME}};
+use crate::shared::{env::{ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, TEMPORARY_USERDATA_TOKEN_SECRET}, errors::{adapt_error, AsStatusCode}, settings::{ACCESS_TOKEN_LIFETIME, REFRESH_TOKEN_LIFETIME}};
 
 use super::cookies::TokenCookie;
 
@@ -36,7 +36,7 @@ pub struct RefreshTokenRecord {
 
 
 #[derive(Default, Debug, Serialize, Deserialize)]
-pub struct AccessTokenEncoder;
+pub struct TokenEncoder;
 
 impl AsStatusCode for Error {
     fn as_interaction_error(&self) -> reqwest::StatusCode {
@@ -50,9 +50,11 @@ pub struct AccessTokenResponse {
     pub expires_at: i64
 }
 
-impl AccessTokenEncoder {
-    pub fn encode(access_payload: AccessTokenPayload) -> Result<String, StatusCode>{
-        let access = encode(&Header::default(), &access_payload, &EncodingKey::from_secret(ACCESS_TOKEN_SECRET.as_bytes())).map_err(adapt_error)?;
+
+
+impl TokenEncoder {
+    pub fn encode_access(access_payload: AccessTokenPayload) -> Result<String, StatusCode>{
+        let access = encode(&Header::new(jsonwebtoken::Algorithm::RS256), &access_payload, &EncodingKey::from_secret(ACCESS_TOKEN_SECRET.as_bytes())).map_err(adapt_error)?;
         Ok(access)
     }
 }

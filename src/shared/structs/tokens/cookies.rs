@@ -28,10 +28,12 @@ impl TokenCookie for CookieJar {
         //todo: refresh.set_domain("kaiv.space");
         self.add(refresh)
     }
+
     fn get_rtid(&self) -> Result<Uuid, StatusCode> {
         let cookie = self.get(COOKIE_REFRESH_TOKEN).ok_or(StatusCode::UNAUTHORIZED)?;
         Uuid::parse_str(cookie.value()).map_err(|_| StatusCode::UNAUTHORIZED)
     }
+    
     fn rm_rtid(self) -> Self {
         //todo: clears value, need testing. maybe set_max_age(0)?
         self.remove(Cookie::from(COOKIE_REFRESH_TOKEN))

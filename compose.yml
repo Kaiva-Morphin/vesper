@@ -1,0 +1,22 @@
+services:
+  cockroachdb:
+    env_file: .env
+    image: cockroachdb/cockroach:v20.2.5
+    command: start-single-node --insecure
+    restart: always
+    ports:
+      - "${COCKROACH_PORT}:${COCKROACH_PORT}" # db port
+      - "8080:8080" # web interface port
+    volumes:
+      - ./cockroach-data:/cockroach/cockroach-data
+  redis:
+    image: redis:7.2.4-alpine
+    restart: always
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    command: redis-server --save 20 1 --loglevel warning
+    volumes: 
+      - redis:/data
+volumes:
+  redis:
+    driver: local

@@ -58,7 +58,7 @@ pub async fn auth_callback(
         tuid: tmpr_uuid,
         user_info,
         user_uuid: user.and_then(|u| Some(u.uuid)),
-        expires_at: Utc::now().timestamp() + TEMPORARY_USERDATA_TOKEN_LIFETIME as i64
+        exp: Utc::now().timestamp() + TEMPORARY_USERDATA_TOKEN_LIFETIME as i64
     };
     let token = TokenEncoder::encode_temp(payload)?;
     //let _ : () = state.tokens.set_tmpr(tmpr_uuid)?; // todo: UNUSED? due we can trust jwt.
@@ -75,7 +75,7 @@ fn validate_token(
     token: String
 ) -> Result<TempUserdataPayload, StatusCode> {
     let v = TokenEncoder::decode_temp(token)?;
-    if v.expires_at >= Utc::now().timestamp() {return Err(StatusCode::UNAUTHORIZED)}
+    if v.exp >= Utc::now().timestamp() {return Err(StatusCode::UNAUTHORIZED)}
     Ok(v)
 }
 
@@ -89,58 +89,58 @@ pub async fn oauth_login(
     process_tokens(jar, &state, token_payload.user_uuid.ok_or(StatusCode::UNAUTHORIZED)?, payload.fingerprint, get_user_agent(&headers)).await
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct RegisterRequest{
-    fingerprint: String,
-    username: String,
-    password: String,
-    temp_token: String,
-}
+// #[derive(Serialize, Deserialize)]
+// pub struct RegisterRequest{
+//     fingerprint: String,
+//     username: String,
+//     password: String,
+//     temp_token: String,
+// }
 
-pub async fn oauth_register(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    jar: CookieJar,
-    Json(payload): Json<RegisterRequest>,
-) -> Result<(CookieJar, Json<AccessTokenResponse>), StatusCode> {
-    if !payload.username.is_username_valid() || !payload.password.is_password_valid() {return Err(StatusCode::UNAUTHORIZED)}
-    let token_payload = validate_token(payload.temp_token)?;
-    if token_payload.user_uuid.is_some() {return Err(StatusCode::FOUND)}
+// pub async fn oauth_register(
+//     State(state): State<AppState>,
+//     headers: HeaderMap,
+//     jar: CookieJar,
+//     Json(payload): Json<RegisterRequest>,
+// ) -> Result<(CookieJar, Json<AccessTokenResponse>), StatusCode> {
+//     if !payload.username.is_username_valid() || !payload.password.is_password_valid() {return Err(StatusCode::UNAUTHORIZED)}
+//     let token_payload = validate_token(payload.temp_token)?;
+//     if token_payload.user_uuid.is_some() {return Err(StatusCode::FOUND)}
 
-    let user_uuid = Uuid::new_v4();
+//     let user_uuid = Uuid::new_v4();
     
-    let hashed = hash(payload.password.clone(), DEFAULT_COST).map_err(adapt_error)?;
+//     let hashed = hash(payload.password.clone(), DEFAULT_COST).map_err(adapt_error)?;
 
-    let mut google = None;
-    let mut discord = None;
-    match token_payload.user_info.service {
-        Service::Discord => discord = Some(token_payload.user_info.id),
-        Service::Google => google = Some(token_payload.user_info.id)
-    }
+//     let mut google = None;
+//     let mut discord = None;
+//     match token_payload.user_info.service {
+//         Service::Discord => discord = Some(token_payload.user_info.id),
+//         Service::Google => google = Some(token_payload.user_info.id)
+//     }
 
-    let user = CreateUserData{
-        uuid: user_uuid,
-        username: payload.username.clone(),
-        nickname: payload.username,
-        password: hashed,
-        email: token_payload.user_info.email,
-        discord_id: discord,
-        google_id: google,
-        created: Utc::now().timestamp(),
-    };
+//     let user = CreateUserData{
+//         uuid: user_uuid,
+//         username: payload.username.clone(),
+//         nickname: payload.username,
+//         password: hashed,
+//         email: token_payload.user_info.email,
+//         discord_id: discord,
+//         google_id: google,
+//         created: Utc::now().timestamp(),
+//     };
 
-    let _ = state.postgre.interact(move |conn| {
-        UserData::create(conn, &user).map_err(|e|{
-            if let diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _) = e {
-                StatusCode::CONFLICT
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            }
-            })
-    }).await?;
+//     let _ = state.postgre.interact(move |conn| {
+//         UserData::create(conn, &user).map_err(|e|{
+//             if let diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _) = e {
+//                 StatusCode::CONFLICT
+//             } else {
+//                 StatusCode::INTERNAL_SERVER_ERROR
+//             }
+//             })
+//     }).await?;
 
-    process_tokens(jar, &state, user_uuid, payload.fingerprint, get_user_agent(&headers)).await
-}
+//     process_tokens(jar, &state, user_uuid, payload.fingerprint, get_user_agent(&headers)).await
+// }
 
 
 

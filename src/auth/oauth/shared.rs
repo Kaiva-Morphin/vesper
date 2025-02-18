@@ -51,7 +51,7 @@ pub struct TempUserdataPayload {
     pub tuid: uuid::Uuid,
     pub user_info: UserInfo,
     pub user_uuid: Option<Uuid>,
-    pub expires_at: i64,
+    pub exp: i64,
 }
 
 impl TokenEncoder {

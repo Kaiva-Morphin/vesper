@@ -50,20 +50,20 @@ async fn main() {
     };
 
     let app = Router::new()
-        .route("/api/v1/auth/register", post(register))
-        .route("/api/v1/auth/criteria", post(get_criteria))
-        .route("/api/v1/auth/username_available", get(check_username))
-        .route("/api/v1/auth/refresh", post(refresh_tokens))
-        .route("/api/v1/auth/login", post(login))
+        .route("/api/auth/register", post(register))
+        .route("/api/auth/criteria", post(get_criteria))
+        .route("/api/auth/username_available", get(check_username))
+        .route("/api/auth/refresh", post(refresh_tokens))
+        .route("/api/auth/login", post(login))
         // .route("api/auth/callback") // todo!
-        .route("/api/v1/auth/discord", get(discord_login))
-        .route("/api/v1/auth/google", get(google_login))
-        .route("/api/v1/auth/callback", get(auth_callback))
+        .route("/api/auth/discord", get(discord_login))
+        .route("/api/auth/google", get(google_login))
+        .route("/api/auth/callback", get(auth_callback))
         .route_layer(
             ServiceBuilder::new()
             .layer(HandleErrorLayer::new(handle_too_many_requests))
             .layer(BufferLayer::new(1024))
-            .layer(RateLimitLayer::new(1, Duration::from_secs(2)))
+            .layer(RateLimitLayer::new(1, Duration::from_secs(1)))
         )
         .with_state(appstate);
     

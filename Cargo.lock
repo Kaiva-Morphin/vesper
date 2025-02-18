@@ -1478,6 +1478,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "include-bytes-plus"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "122887eb9acb1544bb0308837039dcfab0ec269f88b46fd2c9a84f3ab124d199"
+
+[[package]]
 name = "indexmap"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1610,6 +1616,7 @@ checksum = "04cbf5b083de1c7e0222a7a51dbfdba1cbe1c6ab0b15e29fff3f6c077fd9cd9f"
 name = "lwapi"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-graphql-axum",
  "axum",
  "axum-extra",
@@ -1622,6 +1629,7 @@ dependencies = [
  "dotenvy",
  "dsync",
  "google-gmail1",
+ "include-bytes-plus",
  "jsonwebtoken",
  "lazy_static",
  "oauth2",

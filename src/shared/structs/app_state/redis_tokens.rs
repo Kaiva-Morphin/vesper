@@ -59,7 +59,7 @@ impl RedisTokens {
     {
         let mut conn = self.pool.get().map_err(adapt_error)?;
         let now = Utc::now().timestamp();
-        let user_key = user_to_key(record.user);
+        let user_key = user_to_key(record.rtid);
         let valid_values: Vec<String> = conn.zrangebyscore(user_key.clone(), now, "+inf").map_err(adapt_error)?;
         if valid_values.len() >= MAX_LIVE_SESSIONS { // ERASE ALL SESSIONS
             for rtid_key in valid_values {
@@ -70,7 +70,7 @@ impl RedisTokens {
             let _: () = conn.zrembyscore(user_key.clone(), "-inf", now).map_err(adapt_error)?;
         }
         let _: () = conn.zadd(user_key.clone(), rtid_to_key(record.rtid), now + REFRESH_TOKEN_LIFETIME as i64).map_err(adapt_error)?;
-        let _: () = conn.set_ex(rtid_to_key(record.rtid), serde_json::to_string(&record).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?, REFRESH_TOKEN_LIFETIME).map_err(adapt_error)?;
+        let _: () = conn.set_ex(rtid_to_key(record.rtid), record.rtid.to_string(), REFRESH_TOKEN_LIFETIME).map_err(adapt_error)?;
         Ok(())
     }
 

@@ -1,40 +1,34 @@
 use axum::{routing::post, Json, Router};
 use axum_extra::extract::CookieJar;
 use cookie::{time::Duration, Cookie};
-use redis::{Commands, RedisResult, ErrorKind};
+use jsonwebtoken::{decode, encode, EncodingKey, DecodingKey, Header};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
 #[tokio::main]
 async fn main() {
-    let app = Router::new()
-        .route("/test", post(refresh_tokens));
-
     
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:1234")).await.unwrap();
-    println!("{}", listener.local_addr().expect("failed to return local address"));
-    axum::serve(listener, app).await.unwrap();
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Body{create: bool}
-#[derive(Serialize, Deserialize)]
-
-pub struct Resp {
-    msg: String
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RefreshTokenPayload {
+    pub user: String,
+    pub exp: i64
 }
 
-pub async fn refresh_tokens(
-    jar: CookieJar,
-    payload: Json<Body>,
-) -> Result<(CookieJar, Json<Resp>), (CookieJar, StatusCode)> {
-    if payload.create{
-        Ok(
-            (jar.add(Cookie::new("A", "B")), Json(Resp{msg: "added".to_string()}))
-        )
-    } else {
-        let mut c = Cookie::from("A");
-        c.set_max_age(Duration::seconds(0));
-        Err((jar.add(c), StatusCode::INTERNAL_SERVER_ERROR))
-    }
+
+
+pub fn encode_refresh(payload: RefreshTokenPayload) -> Result<String, StatusCode>{
+    let encoded = encode(&Header::new(jsonwebtoken::Algorithm::RS256), &payload,
+    &EncodingKey::from_rsa_pem(include_bytes!("../private.pem")).unwrap()).unwrap();
+    Ok(encoded)
+}
+
+pub fn decode_refresh(token: String) -> Result<RefreshTokenPayload, StatusCode>{
+    DecodingKey::from_rsa_der(der)
+    DecodingKey::from_rsa_pem(key)
+    let token = decode::<RefreshTokenPayload>(&token, &DecodingKey::from_secret("secret".as_ref()), &Validation::new(Algorithm::RS256))?;
+    let encoded = encode(&Header::new(jsonwebtoken::Algorithm::RS256), &payload,
+    &EncodingKey::from_rsa_pem(include_bytes!("../private.pem")).map_err(adapt_error)?).map_err(adapt_error)?;
+    Ok(encoded)
 }

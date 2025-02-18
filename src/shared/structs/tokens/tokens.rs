@@ -1,27 +1,28 @@
 use axum::{response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
 use chrono::Utc;
-use jsonwebtoken::{encode, errors::Error, EncodingKey, Header};
+use jsonwebtoken::{decode, encode, errors::Error, Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
+use anyhow::Result;
 use crate::shared::{env::{ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, TEMPORARY_USERDATA_TOKEN_SECRET}, errors::{adapt_error, AsStatusCode}, settings::{ACCESS_TOKEN_LIFETIME, REFRESH_TOKEN_LIFETIME}};
 
 use super::cookies::TokenCookie;
 
+use include_bytes_plus::include_bytes;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AccessTokenPayload {
     pub user: Uuid,
-    pub created: i64,
-    pub lifetime: u64
+    pub exp: i64
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RefreshTokenPayload {
     pub rtid: Uuid,
     pub user: Uuid,
-    pub expires_at: u64
+    pub exp: i64
 }
 
 
@@ -47,18 +48,39 @@ impl AsStatusCode for Error {
 #[derive(Serialize, Deserialize)]
 pub struct AccessTokenResponse {
     pub access_token: String,
-    pub expires_at: i64
+    pub exp: i64
 }
 
-
+#[derive(Serialize, Deserialize)]
+pub struct RefreshTokenResponse {
+    pub refresh_token: String,
+    pub exp: i64
+}
 
 impl TokenEncoder {
-    pub fn encode_access(access_payload: AccessTokenPayload) -> Result<String, StatusCode>{
-        let access = encode(&Header::new(jsonwebtoken::Algorithm::RS256), &access_payload, &EncodingKey::from_secret(ACCESS_TOKEN_SECRET.as_bytes())).map_err(adapt_error)?;
-        Ok(access)
+    pub fn encode_access(payload: AccessTokenPayload) -> Result<String>{
+        let encoded = encode(&Header::new(jsonwebtoken::Algorithm::RS256), &payload,
+        &EncodingKey::from_rsa_pem(&include_bytes!("private.pem"))?)?;
+        Ok(encoded)
+    }
+
+
+    pub fn encode_refresh(payload: RefreshTokenPayload) -> Result<String>{
+        let encoded = encode(&Header::new(jsonwebtoken::Algorithm::RS256), &payload,
+        &EncodingKey::from_rsa_pem(&include_bytes!("private.pem"))?)?;
+        Ok(encoded)
+    }
+
+    pub fn decode_refresh(token: String) -> Result<RefreshTokenPayload> {
+        let token = decode::<RefreshTokenPayload>(&token, &DecodingKey::from_rsa_pem(&include_bytes!("public.pem"))?, &Validation::new(Algorithm::RS256))?;
+        Ok(token.claims)
+    }
+
+    pub fn decode_access(token: String) -> Result<AccessTokenPayload> {
+        let token = decode::<AccessTokenPayload>(&token, &DecodingKey::from_rsa_pem(&include_bytes!("public.pem"))?, &Validation::new(Algorithm::RS256))?;
+        Ok(token.claims)
     }
 }
-
 
 
 

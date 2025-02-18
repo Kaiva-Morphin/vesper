@@ -35,30 +35,14 @@ watch(bgMixAmount, (newValue) => {
 watch(colorPrimary, (newValue) => {
   updateCSSVariable('--color-primary', newValue);
 });});*/
-const swp = () => {
-  if (color.value == r) {
-    color.value = b;
-  } else {
-    color.value = r;
-  }
-}
+
 </script>
 
-<style>
-.test {
-  --color: v-bind(color);
-}
-.test {
-  color: var(--color);
-  transition: color 2s ease-in-out;
-}
-</style>
+
 
 <template>
   <CardWide>
     <ContentHeader>Settings</ContentHeader>
-    <div class="test">zxc</div>
-    <button @click="swp()">press me!</button>
     <ContentMainSeparator />
     <div>Here you can customize the site appearance</div>
     <ContentContainer>
@@ -76,7 +60,6 @@ const swp = () => {
         <input type="color" @input="setCSSVariable($event, '--color-primary')" v-model="useNuxtApp().$userTheme.value['--color-primary']"/>
         <p>Selected Primary Color: <span :style="{ color: useNuxtApp().$userTheme.value['--color-primary'] }">{{ useNuxtApp().$userTheme.value['--color-primary'] }}</span></p>
       </div>
-      
       <div>
         <label for="sidebarToggle">Sidebar full-height: </label>
         <input type="checkbox" id="sidebarToggle" v-model="sidebarY" />

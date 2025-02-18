@@ -30,5 +30,4 @@
   transition: background-color 0.2s, color 0.2s, outline-offset 0.1s;
   background-color: #00000000
 }
-
 </style>

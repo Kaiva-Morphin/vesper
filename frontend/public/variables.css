@@ -10,7 +10,7 @@
   /* COLOR VALUES */
   --color-primary-highlighted: hsl(from var(--color-primary) h calc(s + 10) calc(l + 20));
   --color-primary-highlighted-extra: hsl(from var(--color-primary) h calc(s + 15) calc(l + 10));
-  --color-primary: #00fffb;/*#A4A484;*/
+  --color-primary: #ff0046;/*#00fffb;/*#A4A484;*/
   --color-primary-right: hsl(from var(--color-primary) calc(h + var(--color-offset)) s l);
   --color-primary-left: hsl(from var(--color-primary) calc(h - var(--color-offset)) s l);
   --color-primary-muted: color-mix(in srgb, var(--color-primary) 60%, #000);

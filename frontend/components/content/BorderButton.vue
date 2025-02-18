@@ -33,7 +33,7 @@ const props = defineProps({
   outline-offset: 0px;
   transform: scale(1);
   background-color: #00000000;
-  transition: background-color 0.2s, color 0.2s, outline-offset 0.1s, outline-color 0.1s, transform 0.1s;
+  transition: background-color 0.15s, color 0.15s, outline-offset 0.15s, outline-color 0.15s, transform 0.15s;
 }
 
 .custom-button:hover {
@@ -41,7 +41,7 @@ const props = defineProps({
   background-color: var(--color-primary);
   color: var(--color-text-invert);
   transform: scale(1);
-  transition: background-color 0.2s, color 0.2s, outline-offset 0.1s, outline-color 0.1s, transform 0.1s;
+  transition: background-color 0.15s, color 0.15s, outline-offset 0.15s, outline-color 0.15s, transform 0.15s;
 }
 
 .custom-button:active {
@@ -50,7 +50,7 @@ const props = defineProps({
     outline-offset: -3px;
     outline-color: var(--color-primary-muted);
     transform: scale(0.97);
-    transition: background-color 0.2s, color 0.2s, outline-offset 0.1s, outline-color 0.1s, transform 0.1s;
+    transition: background-color 0.15s, color 0.15s, outline-offset 0.15s, outline-color 0.15s, transform 0.15s;
 }
 
 .custom-button:disabled {

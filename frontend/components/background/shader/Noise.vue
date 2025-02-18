@@ -8,9 +8,6 @@
 .glass {
   background: rgba(0, 0, 0, 0.0);
   backdrop-filter: blur(4px); 
-  
-  transition: background-color var(--interpolation-speed) var(--interpolation-method);
-
   background-color: var(--color-primary);
   mix-blend-mode: overlay;
 }

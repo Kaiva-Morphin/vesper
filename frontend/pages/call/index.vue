@@ -34,7 +34,7 @@
       </ContentContainer>
     </CardWide>
     <CardWide>
-      
+      <Loading class="bg-[var(--color-primary-muted)]"/>
     </CardWide>
   </Column>
 </template>

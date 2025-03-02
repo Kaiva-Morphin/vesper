@@ -1,15 +1,24 @@
 [workspace]
 members = [
-    # "libs/appstate",
+    "libs/appstate",
     "libs/shared",
     "libs/shared_cookies",
-    "libs/shared_db",
     "libs/shared_tokens",
+    "libs/postgre",
+    "libs/postgre/migrations",
+    "libs/postgre/entity",
     "services/auth",
     # "services/old-auth",
-    ]
+]
 resolver = "2"
 
 [workspace.dependencies]
 tracing = "0.1"
 tracing-subscriber = "0.3"
+sea-orm = "1.1.6"
+sea-orm-cli = "1.1.6"
+tokio = "1.43.0"
+
+shared = {path = "libs/shared"}
+postgre = {path = "libs/postgre"}
+migration = {path = "libs/postgre/migrations"}

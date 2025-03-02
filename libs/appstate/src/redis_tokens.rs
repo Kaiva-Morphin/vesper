@@ -28,7 +28,6 @@ impl AsStatusCode for RedisError {
 const REFRESH_TOKEN_PREFIX : &'static str = "RTID";
 const USER_TOKEN_PAIR_PREFIX : &'static str = "UTPP";
 const CRFS_TOKEN_PREFIX : &'static str = "CRFS";
-//const TEMPORARY_USERDATA_TOKEN_PREFIX : &'static str = "TMPR";
 
 fn rtid_to_key(rtid: Uuid) -> String{
     format!("{}::{}", REFRESH_TOKEN_PREFIX, rtid)
@@ -41,11 +40,6 @@ fn user_to_key(user: Uuid) -> String{
 fn crfs_to_key(crfs: &String) -> String{
     format!("{}::{}", CRFS_TOKEN_PREFIX, crfs)
 }
-
-/*fn tmpr_to_key(tmpr: Uuid) -> String{
-    format!("{}::{}", TEMPORARY_USERDATA_TOKEN_PREFIX, tmpr)
-}*/
-
 
 impl RedisTokens {
     pub fn default() -> Self {

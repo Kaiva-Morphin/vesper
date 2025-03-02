@@ -1,0 +1,12 @@
+[package]
+name = "appstate"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.40"
+deadpool-diesel = "0.6.1"
+diesel = "2.2.7"
+redis = "0.29.1"
+reqwest = "0.12.12"
+uuid = "1.15.1"

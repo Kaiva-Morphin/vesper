@@ -2,11 +2,11 @@ services:
   cockroachdb:
     env_file: .env
     image: cockroachdb/cockroach:v20.2.5
-    command: start-single-node --insecure
+    command: start-single-node --insecure # todo!: move to cluster!
     restart: always
     ports:
-      - "${COCKROACH_PORT}:${COCKROACH_PORT}" # db port
-      - "8080:8080" # web interface port
+      - "${COCKROACH_PORT}:${COCKROACH_PORT}"
+      - "8080:8080" # todo!: rm! web interface port
     volumes:
       - ./cockroach-data:/cockroach/cockroach-data
   redis:

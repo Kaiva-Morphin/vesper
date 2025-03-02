@@ -1,6 +1,7 @@
 use std::path::Path;
 
 fn main() {
+    stringify!("");
     // Get the path to the directory where Cargo.toml is located
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
 

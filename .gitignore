@@ -20,7 +20,6 @@ logs
 
 # Local env files
 .env
-.env.*
 !.env.example
 
 # rust
@@ -32,5 +31,13 @@ logs
 # db data
 /cockroach-data
 
-# private rsa key
+# rs keys
 private.pem
+public.pem
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target

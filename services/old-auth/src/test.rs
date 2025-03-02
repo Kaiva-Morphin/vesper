@@ -25,8 +25,6 @@ pub fn encode_refresh(payload: RefreshTokenPayload) -> Result<String, StatusCode
 }
 
 pub fn decode_refresh(token: String) -> Result<RefreshTokenPayload, StatusCode>{
-    DecodingKey::from_rsa_der(der)
-    DecodingKey::from_rsa_pem(key)
     let token = decode::<RefreshTokenPayload>(&token, &DecodingKey::from_secret("secret".as_ref()), &Validation::new(Algorithm::RS256))?;
     let encoded = encode(&Header::new(jsonwebtoken::Algorithm::RS256), &payload,
     &EncodingKey::from_rsa_pem(include_bytes!("../private.pem")).map_err(adapt_error)?).map_err(adapt_error)?;

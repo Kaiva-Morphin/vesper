@@ -28,8 +28,10 @@ logs
 # just a file
 .secret
 
+*.h1dden*
+
 # db data
-/cockroach-data
+/dbs
 
 # rs keys
 private.pem

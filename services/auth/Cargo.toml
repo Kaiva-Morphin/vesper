@@ -4,3 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow.workspace = true
+axum.workspace = true
+axum-extra.workspace = true
+postgre_migrations.workspace = true
+postgre_entities.workspace = true
+sea-orm.workspace = true
+serde.workspace = true
+shared.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

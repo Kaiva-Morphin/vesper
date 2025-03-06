@@ -1,14 +1,16 @@
 #![allow(non_snake_case)]
 #![allow(unused)]
 
+use std::str::FromStr;
+
 #[derive(Debug)]
-enum ParseError {
+pub enum ParseError {
     Missing,
     Invalid,
 }
 
 impl ParseError {
-    fn describe_panic(&self, name: &'static str, ty: &'static str) -> ! {
+    pub fn describe_panic(&self, name: &'static str, ty: &'static str) -> ! {
         match self {
             Self::Invalid => panic!("Invalid env var: {} - must be {}", name, ty),
             Self::Missing => panic!("Missing required env var: {}", name)
@@ -16,11 +18,12 @@ impl ParseError {
     }
 }
 
-trait TryParse<E> {
+
+pub trait TryParse<E> {
     fn try_parse<T : std::str::FromStr>(self) -> Result<T, E>;
 }
 
-impl TryParse<ParseError> for Result<String, std::env::VarError> {
+impl<E> TryParse<ParseError> for Result<String, E> {
     fn try_parse<T: std::str::FromStr>(self) -> Result<T, ParseError> {
         match self {
             Ok(v) => v.parse::<T>().ok().ok_or(ParseError::Invalid),
@@ -29,7 +32,7 @@ impl TryParse<ParseError> for Result<String, std::env::VarError> {
     }
 }
 
-trait Operator<T, E> {
+pub trait Operator<T, E> {
     fn if_none(self, rh: Result<T, E>) -> Result<T, E>;
 }
 
@@ -44,13 +47,16 @@ impl<T> Operator<T, ParseError> for (T,) {
         match rh {
             Ok(v) => Ok(v),
             Err(_e) => Ok(self.0),
-        } // self.0
+        }
     }
 }
+
+
 
 #[macro_export]
 macro_rules! env_config {
     ($filename:expr => $glob:ident = $struct:ident {$($field:ident : $type:ty $(= $op_val:expr)? ),* $(,)?}) => {
+        #[allow(non_snake_case)]
         pub struct $struct {
             $(pub $field: $type),*
         }
@@ -59,15 +65,16 @@ macro_rules! env_config {
                 Self {
                     $(
                         $field: 
-                                ((($($op_val,)?))).if_none(std::env::var(stringify!($field)).try_parse::<$type>())
-                                .unwrap_or_else(|e| e.describe_panic(stringify!($field), stringify!($type))),
+                        $crate::env::Operator::if_none(($($op_val,)?), 
+                        $crate::env::TryParse::try_parse::<$type>(std::env::var(stringify!($field).to_ascii_uppercase()))
+                        ).unwrap_or_else(|e| e.describe_panic(stringify!($field), stringify!($type))),
                     )*
                 }
             }
         }
 
-        pub static $glob : once_cell::sync::Lazy<$struct> = once_cell::sync::Lazy::new(|| {
-            dotenvy::from_filename_override($filename).ok();
+        pub static $glob : $crate::once_cell::sync::Lazy<$struct> = $crate::once_cell::sync::Lazy::new(|| {
+            $crate::dotenvy::from_filename_override($filename).ok();
             $struct::new()
         });
     };

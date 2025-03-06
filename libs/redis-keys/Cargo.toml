@@ -1,0 +1,15 @@
+[package]
+name = "redis-keys"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+r2d2 = "0.8.10"
+redis = { version = "0.28.2", features = ["r2d2", "tokio-comp", "ahash", "json"] }
+uuid.workspace = true
+shared.workspace = true
+tracing.workspace = true
+reqwest.workspace = true
+chrono.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true

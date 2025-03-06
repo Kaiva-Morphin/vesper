@@ -1,24 +1,40 @@
 [workspace]
 members = [
-    "libs/appstate",
     "libs/shared",
-    "libs/shared_cookies",
-    "libs/shared_tokens",
-    "libs/postgre",
     "libs/postgre/migrations",
-    "libs/postgre/entity",
-    "services/auth",
+    "libs/postgre/entities",
+    "services/auth", "libs/redis-keys",
     # "services/old-auth",
 ]
 resolver = "2"
 
 [workspace.dependencies]
-tracing = "0.1"
-tracing-subscriber = "0.3"
-sea-orm = "1.1.6"
-sea-orm-cli = "1.1.6"
-tokio = "1.43.0"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+sea-orm = {version = "1.1.7", features = ["sqlx-postgres", "runtime-tokio-rustls", "with-time", "with-uuid", "macros"]}
+reqwest = "0.12.12"
+chrono = "0.4.40"
+serde_json = "1.0.140"
+tower ={version = "0.5.2", features = ["full"]}
+tokio = {version = "1.43.0", features = ["full"] }
+tower-http = { version = "0.6.2", features = ["catch-panic", "trace"] }
+include-bytes-plus = "1.1.0"
+anyhow = "1.0.97"
+serde = {version = "1.0.218", features = ["derive"]}
+axum-extra = "0.10.0"
+axum = "0.8.1"
+uuid = { version = "1.15.1", features = ["serde","v4"] }
+rand = "0.9.0"
+bcrypt = "0.17.0"   
+regex = "1.11.1"
+jsonwebtoken = {version="9.3.1", features = ["use_pem"]}
+
+
+sea-orm-cli = "1.1.7"
+
 
 shared = {path = "libs/shared"}
-postgre = {path = "libs/postgre"}
-migration = {path = "libs/postgre/migrations"}
+postgre_migrations = {path = "libs/postgre/migrations"}
+postgre_entities = {path = "libs/postgre/entities"}
+
+

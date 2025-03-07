@@ -13,13 +13,15 @@ impl MigrationTrait for Migration {
                     .table(UserData::Table)
                     .if_not_exists()
                     .col(uuid(UserData::UUID).not_null().primary_key().unique_key())
-                    .col(string_len(UserData::Username, 32).not_null().unique_key())
-                    .col(string_len(UserData::Nickname, 32).not_null())
+                    .col(string(UserData::Login).not_null().unique_key())
+                    .col(string(UserData::Nickname).not_null())
                     .col(string(UserData::Password).not_null())
                     .col(string(UserData::Email).not_null().unique_key())
                     .col(string_null(UserData::DiscordId).unique_key())
                     .col(string_null(UserData::GoogleId).unique_key())
-                    .col(timestamp(UserData::Created))
+                    .col(timestamp_null(UserData::LastLoginChange)) //.extra("DEFAULT CURRENT_TIMESTAMP".to_string())
+                    .col(timestamp(UserData::UpdatedAt).extra("DEFAULT CURRENT_TIMESTAMP".to_string()))
+                    .col(timestamp(UserData::CreatedAt).extra("DEFAULT CURRENT_TIMESTAMP".to_string()))
                     .to_owned(),
             )
             .await
@@ -36,11 +38,13 @@ impl MigrationTrait for Migration {
 enum UserData {
     Table,
     UUID,
-    Username,
+    Login,
     Nickname,
     Password,
     Email,
     DiscordId,
     GoogleId,
-    Created
+    LastLoginChange,
+    UpdatedAt,
+    CreatedAt
 }

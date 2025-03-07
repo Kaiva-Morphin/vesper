@@ -1,5 +1,4 @@
-use tracing::Level;
-use tracing_subscriber::{fmt, layer::SubscriberExt, FmtSubscriber};
+use tracing_subscriber::{fmt, layer::SubscriberExt};
 
 
 

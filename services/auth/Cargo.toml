@@ -3,6 +3,10 @@ name = "auth"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+disable_turnstile = []
+
 [dependencies]
 anyhow.workspace = true
 axum.workspace = true
@@ -17,3 +21,9 @@ tower.workspace = true
 tower-http.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+lazy_static.workspace = true
+bcrypt.workspace = true
+regex.workspace = true
+cookie.workspace = true
+sha2 = "0.10.8"
+log = "0.4.26"

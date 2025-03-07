@@ -55,28 +55,30 @@ impl<T> Operator<T, ParseError> for (T,) {
 
 #[macro_export]
 macro_rules! env_config {
-    ($filename:expr => $glob:ident = $struct:ident {$($field:ident : $type:ty $(= $op_val:expr)? ),* $(,)?}) => {
-        #[allow(non_snake_case)]
-        pub struct $struct {
-            $(pub $field: $type),*
-        }
-        impl $struct {
-            fn new() -> Self {
-                Self {
-                    $(
-                        $field: 
-                        $crate::env::Operator::if_none(($($op_val,)?), 
-                        $crate::env::TryParse::try_parse::<$type>(std::env::var(stringify!($field).to_ascii_uppercase()))
-                        ).unwrap_or_else(|e| e.describe_panic(stringify!($field), stringify!($type))),
-                    )*
+    ($($filename:expr => $glob:ident = $struct:ident {$($field:ident : $type:ty $(= $op_val:expr)? ),* $(,)?})*) => {
+        $(
+            #[allow(non_snake_case)]
+            pub struct $struct {
+                $(pub $field: $type),*
+            }
+            impl $struct {
+                fn new() -> Self {
+                    Self {
+                        $(
+                            $field: 
+                            $crate::env::Operator::if_none(($($op_val,)?), 
+                            $crate::env::TryParse::try_parse::<$type>(std::env::var(stringify!($field).to_ascii_uppercase()))
+                            ).unwrap_or_else(|e| e.describe_panic(stringify!($field), stringify!($type))),
+                        )*
+                    }
                 }
             }
-        }
 
-        pub static $glob : $crate::once_cell::sync::Lazy<$struct> = $crate::once_cell::sync::Lazy::new(|| {
-            $crate::dotenvy::from_filename_override($filename).ok();
-            $struct::new()
-        });
+            pub static $glob : $crate::once_cell::sync::Lazy<$struct> = $crate::once_cell::sync::Lazy::new(|| {
+                $crate::dotenvy::from_filename_override($filename).ok(); // only for develop
+                $struct::new()
+            });
+        )*
     };
 }
 

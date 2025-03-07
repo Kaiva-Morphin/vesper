@@ -46,8 +46,8 @@ impl RegisterValidations for String {
     fn is_username_valid(&self) -> bool {
         let len = self.chars().count();
         COMPILED_USERNAME_REGEX.is_match(self) &&
-            len >= MIN_USERNAME_LENGTH &&
-            len <= MAX_USERNAME_LENGTH
+            len >= MIN_LOGIN_LENGTH &&
+            len <= MAX_LOGIN_LENGTH
     }
     fn is_email_valid(&self) -> bool {
         COMPILED_EMAIL_REGEX.is_match(self)
@@ -108,8 +108,8 @@ pub struct RegisterCriteria {
 
 pub async fn get_criteria() -> Json<RegisterCriteria> {
     Json(RegisterCriteria{
-        username_len_max: MAX_USERNAME_LENGTH,
-        username_len_min: MIN_USERNAME_LENGTH,
+        username_len_max: MAX_LOGIN_LENGTH,
+        username_len_min: MIN_LOGIN_LENGTH,
         password_len_max: MAX_PASSWORD_LENGTH,
         password_len_min: MIN_PASSWORD_LENGTH,
         username_regex: USERNAME_REGEX.to_string(),

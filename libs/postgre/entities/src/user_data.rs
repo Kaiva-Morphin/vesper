@@ -8,7 +8,7 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub uuid: Uuid,
     #[sea_orm(unique)]
-    pub username: String,
+    pub login: String,
     pub nickname: String,
     pub password: String,
     #[sea_orm(unique)]
@@ -17,10 +17,11 @@ pub struct Model {
     pub discord_id: Option<String>,
     #[sea_orm(unique)]
     pub google_id: Option<String>,
-    pub created: DateTime,
+    pub last_login_change: Option<DateTime>,
+    pub updated_at: DateTime,
+    pub created_at: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
 
-impl ActiveModelBehavior for ActiveModel {}

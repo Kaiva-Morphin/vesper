@@ -1,11 +1,13 @@
 use std::{backtrace::{Backtrace, BacktraceStatus}, panic::catch_unwind, time::Duration};
 
 use axum::{
-    body::Body, error_handling::HandleErrorLayer, extract::{Request, State}, http::{HeaderMap, StatusCode}, response::{IntoResponse, Response}, routing::get, Json, Router
+    body::Body, error_handling::HandleErrorLayer, extract::{Request, State}, http::{HeaderMap, StatusCode}, response::{IntoResponse, Response}, routing::{get, post}, Json, Router
 };
+use endpoints::{login::login, register::{self, get_criteria, register}, username::check_username};
 use migration::MigratorTrait;
+use sea_orm::ConnectOptions;
 use serde::{Deserialize, Serialize};
-use shared::{env_config, utils::panic_hook::panic_hook};
+use shared::{env_config, tokens::redis::RedisTokens};
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
 use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
 use tracing::{error, info, warn};
@@ -19,15 +21,28 @@ mod repository;
 
 #[derive(Clone)]
 pub struct AppState {
-    db : sea_orm::DatabaseConnection,
+    pub db : sea_orm::DatabaseConnection,
+    pub tokens: RedisTokens,
 }
 
 use anyhow::Result;
 
 env_config!(
-    "shared.env" => ENV = EnvConfig {
+    "shared.env" => ENV = Env {
         SERVICE_AUTH_PORT : u16,
         DATABASE_URL : String,
+        TURNSTILE_SECRET : String,
+    }
+    ".cfg" => CFG = EnvCfg {
+        REDIS_REFRESH_TOKEN_LIFETIME : u64 = 30 * 24 * 60 * 60, // 30 days
+        REDIS_ACCESS_TOKEN_LIFETIME : u64 = 15 * 60, // 15 min
+        REDIS_MAX_LIVE_SESSIONS : usize = 5,
+        MIN_LOGIN_LENGTH : usize = 4,
+        MAX_LOGIN_LENGTH : usize = 24,
+        MIN_PASSWORD_LENGTH : usize = 4,
+        MAX_PASSWORD_LENGTH : usize = 24,
+        MIN_NICKNAME_LENGTH : usize = 1,
+        MAX_NICKNAME_LENGTH : usize = 32,
     }
 );
 
@@ -43,16 +58,21 @@ async fn handler(req: Request<Body>) -> impl IntoResponse {
 #[tokio::main]
 async fn main() -> Result<()>{
     shared::utils::logger::init_logger();
-    std::panic::set_hook(Box::new(panic_hook));
 
-    let conn = sea_orm::Database::connect(&ENV.DATABASE_URL)
+    let mut options = ConnectOptions::new(&ENV.DATABASE_URL);
+    
+    options
+        .sqlx_logging(false);
+
+    let conn = sea_orm::Database::connect(options)
         .await
         .expect("Database connection failed");
 
     migration::Migrator::up(&conn, None).await.unwrap();
 
     let state = AppState{
-        db: conn
+        db: conn,
+        tokens: RedisTokens::default()
     };
 
     let timeout_layer = ServiceBuilder::new()
@@ -71,12 +91,18 @@ async fn main() -> Result<()>{
     let limit_layer = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(handle_too_many_requests))
         .layer(BufferLayer::new(1024))
-        .layer(RateLimitLayer::new(1, Duration::from_secs(1)));
+        .layer(RateLimitLayer::new(1, Duration::from_secs(1))); // TODO!: check header for CF-Connecting-IP from cloudflare. Also limit authed users to ~10 actions/sec
 
+    
+    
     let app = Router::new()
         .route("/", get(handler))
-        .route("/check_username", get(endpoints::username::check_username).route_layer(limit_layer))
+        .route("/get_register_criteria", get(get_criteria))
+        .route("/check_username", get(check_username))
+        .route("/register", post(register))
+        .route("/login", post(login))
         .with_state(state)
+        .layer(limit_layer)
         .layer(tracing_layer);
     
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", ENV.SERVICE_AUTH_PORT)).await?;
@@ -87,7 +113,7 @@ async fn main() -> Result<()>{
     } else {
         warn!("Failed to get local address");
     }
-    
+
     axum::serve(listener, app.into_make_service()).await.unwrap();
     Ok(())
 }

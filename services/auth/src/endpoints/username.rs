@@ -16,5 +16,5 @@ pub async fn check_username(
     State(state): State<AppState>,
     Json(CheckUsername{username}): Json<CheckUsername>
 ) -> Result<Json<bool>, AppErr> {
-    Ok(Json(state.is_username_available(username).await?))
+    Ok(Json(state.is_login_available(username).await?))
 }

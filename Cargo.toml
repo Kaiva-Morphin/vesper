@@ -12,7 +12,7 @@ resolver = "2"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 sea-orm = {version = "1.1.7", features = ["sqlx-postgres", "runtime-tokio-rustls", "with-time", "with-uuid", "macros"]}
-reqwest = "0.12.12"
+reqwest = { version = "0.12.12", features = ["json"] }
 chrono = "0.4.40"
 serde_json = "1.0.140"
 tower ={version = "0.5.2", features = ["full"]}
@@ -21,15 +21,17 @@ tower-http = { version = "0.6.2", features = ["catch-panic", "trace"] }
 include-bytes-plus = "1.1.0"
 anyhow = "1.0.97"
 serde = {version = "1.0.218", features = ["derive"]}
-axum-extra = "0.10.0"
-axum = "0.8.1"
+axum-extra = { version = "0.10.0", features = ["cookie"] }
+axum = { version = "0.8.1", features = ["macros"] }
 uuid = { version = "1.15.1", features = ["serde","v4"] }
 rand = "0.9.0"
 bcrypt = "0.17.0"   
 regex = "1.11.1"
 jsonwebtoken = {version="9.3.1", features = ["use_pem"]}
-
-
+lazy_static = "1.5.0"
+cookie = "0.18.1"
+redis = { version = "0.28.2", features = ["r2d2", "tokio-comp", "ahash", "json"] }
+r2d2 = "0.8.10"
 sea-orm-cli = "1.1.7"
 
 

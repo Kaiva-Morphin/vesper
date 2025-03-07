@@ -1,7 +1,7 @@
 <template>
   <div :class="['flex message relative w-full justify-center items-center', jumpy?'jump':'']">
     <span :class="['flex items-center gap-2', jumpy ? 'jump' : '']">
-      <slot/>
+        <slot/>
     </span>
     <div class="absolute -bottom-[1px] message-pin w-2 h-2 -translate-x-1/2 translate-y-1/2 rotate-45"></div>
   </div>

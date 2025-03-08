@@ -59,8 +59,12 @@ pub struct RefreshTokenResponse {
     pub exp: i64
 }
 
-static PUBLIC_DECODING_KEY : Lazy<DecodingKey> = Lazy::new(|| {
-    DecodingKey::from_rsa_pem(&include_bytes!("public.pem")).expect("Can't load public.pem")
+pub fn get_public_key() -> [u8; 451] {
+    include_bytes!("public.pem")
+}
+
+pub static PUBLIC_DECODING_KEY : Lazy<DecodingKey> = Lazy::new(|| {
+    DecodingKey::from_rsa_pem(&get_public_key()).expect("Can't load public.pem")
 });
 
 static PRIVATE_ENCODING_KEY : Lazy<EncodingKey> = Lazy::new(|| {

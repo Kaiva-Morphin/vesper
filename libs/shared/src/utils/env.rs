@@ -66,8 +66,8 @@ macro_rules! env_config {
                     Self {
                         $(
                             $field: 
-                            $crate::env::Operator::if_none(($($op_val,)?), 
-                            $crate::env::TryParse::try_parse::<$type>(std::env::var(stringify!($field).to_ascii_uppercase()))
+                            $crate::utils::env::Operator::if_none(($($op_val,)?), 
+                            $crate::utils::env::TryParse::try_parse::<$type>(std::env::var(stringify!($field).to_ascii_uppercase()))
                             ).unwrap_or_else(|e| e.describe_panic(stringify!($field), stringify!($type))),
                         )*
                     }

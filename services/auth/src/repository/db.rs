@@ -12,22 +12,6 @@ use crate::endpoints::register::RegisterBody;
 
 use bcrypt::{hash, DEFAULT_COST};
 
-
-pub struct ErrOption<T>(Option<T>);
-
-impl<T> ErrOption<T> {
-    pub fn err(self) -> Option<T> {
-        self.0
-    }
-}
-
-impl<F> From<Option<F>> for ErrOption<F> {
-    fn from(value: Option<F>) -> Self {
-        ErrOption(value)
-    }
-}
-
-
 impl AppState {
     pub async fn is_login_available(&self, login: String) -> Result<bool> {
         let v = user_data::Entity::find()

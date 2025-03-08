@@ -3,7 +3,7 @@ members = [
     "libs/shared",
     "libs/postgre/migrations",
     "libs/postgre/entities",
-    "services/auth", "libs/redis-keys",
+    "services/auth", "libs/redis-keys", "services/email", "libs/message_broker", "libs/postgre/db",
     # "services/old-auth",
 ]
 resolver = "2"
@@ -33,7 +33,7 @@ cookie = "0.18.1"
 redis = { version = "0.28.2", features = ["r2d2", "tokio-comp", "ahash", "json"] }
 r2d2 = "0.8.10"
 sea-orm-cli = "1.1.7"
-
+async-nats = "0.39.0"
 
 shared = {path = "libs/shared"}
 postgre_migrations = {path = "libs/postgre/migrations"}

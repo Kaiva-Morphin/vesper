@@ -1,9 +1,10 @@
 pub mod tokens;
 pub mod utils;
 pub mod layers;
-pub mod env;
 pub use once_cell;
 pub use dotenvy;
+pub use uuid;
+pub use tracing;
 use once_cell::sync::Lazy;
 
 #[macro_export]
@@ -17,7 +18,7 @@ macro_rules! default_err {
 }
 
 env_config!(
-    "shared.env" => ENV = EnvConfig{
+    ".env" => ENV = EnvConfig{
         REDIS_TOKEN_DB : String = "4".to_string(),
         REDIS_PORT : u16,
         REDIS_URL : String,

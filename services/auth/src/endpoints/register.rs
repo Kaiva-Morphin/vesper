@@ -76,6 +76,7 @@ pub struct RegisterBody {
     pub nickname: String,
     pub email: String,
     pub password: String,
+    pub email_code: String,
     pub turnstile_response: String,
     pub fingerprint: String
 }
@@ -96,15 +97,32 @@ pub async fn register(
     State(state): State<AppState>,
     jar: CookieJar,
     headers: HeaderMap,
-    Json(register_body): Json<RegisterBody>,
+    Json(request_body): Json<RegisterBody>,
 ) -> Result<impl IntoResponse, AppErr> {
     #[cfg(not(feature = "disable_turnstile"))]
-    if !verify_turnstile(register_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::UNAUTHORIZED, "Turnstile failed").into_response())};
-    let _ = register_body.validate()?;
-    let fingerprint = register_body.fingerprint.clone();
-    let v = state.register_user(register_body).await?;
+    if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::BAD_REQUEST, "Turnstile failed").into_response())};
+    let Ok(_) = request_body.validate() else {return Ok((StatusCode::BAD_REQUEST, "Invalid data sent!").into_response())};
+    let fingerprint = request_body.fingerprint.clone();
+    let v = state.register_user(request_body).await?;
     let user_id = match v {Ok(user) => user, Err(msg) => return Ok((StatusCode::CONFLICT, msg).into_response())};
     let jar = generate_and_put_refresh(jar, &state, &user_id, fingerprint, get_user_agent(&headers), get_user_ip(&headers))?;
     let access_response = generate_access(user_id)?;
     Ok((jar, access_response).into_response())
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RequestCodeBody {
+    pub email: String,
+    pub turnstile_response: String,
+}
+
+pub async fn request_register_code(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(request_body): Json<RequestCodeBody>,
+) -> Result<impl IntoResponse, AppErr> {
+    #[cfg(not(feature = "disable_turnstile"))]
+    if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::UNAUTHORIZED, "Turnstile failed").into_response())};
+    state.send_register_code(request_body.email).await?;
+    Ok("Code sent".into_response())
 }

@@ -15,9 +15,35 @@ pub async fn logging_middleware(req: Request<Body>, next: Next) -> Response {
     response
 }
 
-pub async fn unique_span(req: Request<Body>, next: Next) -> Response {
-    let id : uuid::Uuid = uuid::Uuid::new_v4();
-    let span = info_span!("request ", %id);
-    let response = next.run(req).instrument(span.clone()).await;
-    response
+#[macro_export]
+macro_rules! make_unique_span {
+    ($name:ident) => {
+        let id : $crate::uuid::Uuid = $crate::uuid::Uuid::new_v4();
+        let $name = $crate::tracing::info_span!("", %id);
+    };
+
+    ($prefix:expr, $name:ident) => {
+        let id : $crate::uuid::Uuid = $crate::uuid::Uuid::new_v4();
+        let $name = $crate::tracing::info_span!($prefix, %id);
+    };
+}
+
+#[macro_export]
+macro_rules! with_unique_span_layer {
+    ($prefix:expr) => {
+        async |req: Request<Body>, next: axum::middleware::Next| -> Response {
+            $crate::make_unique_span!($prefix, span);
+            let response = $crate::tracing::Instrument::instrument(next.run(req), span).await;
+            response
+        }
+    };
+
+    () => {
+        async |req: Request<Body>, next: Next| -> Response {
+            let id : uuid::Uuid = uuid::Uuid::new_v4();
+            $crate::make_unique_span!(span);
+            let response = next.run(req).instrument(span).await;
+            response
+        }
+    };
 }

@@ -1,4 +1,4 @@
 pub mod tokens;
-pub mod redis;
+pub mod email;
 pub mod db;
 pub mod cookies;

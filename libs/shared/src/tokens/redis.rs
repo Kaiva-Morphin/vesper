@@ -22,7 +22,7 @@ const CRFS_TOKEN_PREFIX : &'static str = "CRFS";
 
 fn rtid_to_key(rtid: Uuid) -> String{
     format!("{}::{}", REFRESH_TOKEN_PREFIX, rtid)
-}
+}   
 
 fn user_to_key(user: Uuid) -> String{
     format!("{}::{}", USER_TOKEN_PAIR_PREFIX, user)

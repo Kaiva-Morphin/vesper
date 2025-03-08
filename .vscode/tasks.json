@@ -1,0 +1,59 @@
+{
+	"tasks": [
+		{
+			"type": "cargo",
+			"command": "run",
+            "args": [
+                "-p",
+                "auth"
+            ],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: run auth"
+		},
+		{
+			"type": "cargo",
+			"command": "run",
+            "args": [
+                "-p",
+                "email"
+            ],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: run email"
+		},
+		{
+			"type": "process",
+            "command": "powershell",
+			"args": [
+				"-Command",
+				"docker compose up"
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: up docker"
+		}
+	]
+}

@@ -8,16 +8,21 @@ impl ActiveModelBehavior for ActiveModel {
     where
         C: ConnectionTrait,
     {
-        if !self.email.is_unchanged() {
-            //todo: send email
+        // if !insert { // todo! move to user service
+        //     if !self.email.is_unchanged() {
+        //         //todo: send email
+        //     }
+        //     if !self.login.is_unchanged() {
+        //         //todo: send email
+        //     }
+        //     if !self.password.is_unchanged() {
+        //         //todo: send email
+        //     }
+        // }
+        if self.is_changed() {
+            self.updated_at = Default::default();
         }
         if !self.login.is_unchanged() {
-            //todo: send email
-        }
-        if !self.password.is_unchanged() {
-            //todo: send email
-        }
-        if self.is_changed() {
             self.last_login_change = Default::default();
         }
         Ok(self)

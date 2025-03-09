@@ -6,7 +6,7 @@ use axum::{
 };
 use endpoints::{login::login, public_key::get_public_key, register::{self, get_criteria, register, request_register_code}, username::check_username};
 use message_broker::publisher::build_publisher;
-use shared::{env_config, tokens::redis::RedisTokens};
+use shared::{env_config, tokens::redis::RedisConn};
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
 use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
 use tracing::{error, info, warn};
@@ -21,7 +21,7 @@ mod repository;
 #[derive(Clone)]
 pub struct AppState {
     pub db : sea_orm::DatabaseConnection,
-    pub tokens: RedisTokens,
+    pub redis: RedisConn,
     pub publisher: Context
 }
 
@@ -34,7 +34,7 @@ env_config!(
         TURNSTILE_SECRET : String,
         EMAIL_SEND_NATS_EVENT : String,
     }
-    ".cfg" => CFG = EnvCfg {
+    ".cfg" => CFG = Cfg {
         REDIS_REFRESH_TOKEN_LIFETIME : u64 = 30 * 24 * 60 * 60, // 30 days
         REDIS_ACCESS_TOKEN_LIFETIME : u64 = 15 * 60, // 15 min
         REDIS_MAX_LIVE_SESSIONS : usize = 5,
@@ -44,6 +44,8 @@ env_config!(
         MAX_PASSWORD_LENGTH : usize = 24,
         MIN_NICKNAME_LENGTH : usize = 1,
         MAX_NICKNAME_LENGTH : usize = 32,
+        RECOVERY_EMAIL_LIFETIME : u64 = 5 * 60,
+        REGISTER_EMAIL_LIFETIME : u64 = 5 * 60,
     }
 );
 
@@ -62,7 +64,7 @@ async fn main() -> Result<()>{
 
     let state = AppState{
         db: db::open_database_connection().await?,
-        tokens: RedisTokens::default(),
+        redis: RedisConn::default(),
         publisher: build_publisher().await?
     };
 

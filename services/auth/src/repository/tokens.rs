@@ -2,7 +2,7 @@ use axum::{http::HeaderMap, Json};
 use axum_extra::extract::CookieJar;
 use sea_orm::{prelude::Uuid, sqlx::types::chrono::Utc};
 use sha2::Digest;
-use shared::tokens::{jwt::{AccessTokenPayload, AccessTokenResponse, RefreshTokenPayload, RefreshTokenRecord, TokenEncoder}, redis::RedisTokens};
+use shared::tokens::{jwt::{AccessTokenPayload, AccessTokenResponse, RefreshTokenPayload, RefreshTokenRecord, TokenEncoder}, redis::RedisConn};
 
 use anyhow::Result;
 use tracing::info;
@@ -50,7 +50,7 @@ pub fn generate_and_put_refresh(
         exp: Utc::now().timestamp() + CFG.REDIS_REFRESH_TOKEN_LIFETIME as i64
     };
     let refresh_token = TokenEncoder::encode_refresh(refresh_payload)?;
-    state.tokens.set_refresh(refresh_record)?;
+    state.redis.set_refresh(refresh_record)?;
     Ok(jar.put_refresh(refresh_token))
 }
 

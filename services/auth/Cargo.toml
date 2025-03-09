@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["disable_turnstile", "disable_email"]
+default = ["disable_turnstile"] # "disable_email"
 disable_turnstile = []
 disable_email = []
 
@@ -33,3 +33,4 @@ db = { version = "0.1.0", path = "../../libs/postgre/db" }
 async-nats.workspace = true
 message_broker = { version = "0.1.0", path = "../../libs/message_broker" }
 bincode = { version = "2.0.0", features = ["serde"] }
+rand.workspace = true

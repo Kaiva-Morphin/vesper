@@ -23,7 +23,7 @@ pub mod schema;
 pub mod auth;
 use shared::env::*;
 use shared::structs::app_state::postgre::Postgre;
-use shared::structs::app_state::redis_tokens::RedisTokens;
+use shared::structs::app_state::redis_tokens::RedisConn;
 use tower::buffer::BufferLayer;
 use tower::limit::RateLimitLayer;
 use tower::ServiceBuilder;
@@ -34,7 +34,7 @@ pub struct AppState{
     pub google_client: BasicClient,
     pub discord_client: BasicClient,
     pub postgre: Postgre, 
-    pub tokens: RedisTokens,
+    pub tokens: RedisConn,
 }
 
 #[tokio::main]
@@ -46,7 +46,7 @@ async fn main() {
         google_client: google_oauth_client().expect("Can't create google client!"),
         discord_client: discord_oauth_client().expect("Can't create discord client!"),
         postgre: Postgre::default(),
-        tokens: RedisTokens::default()
+        tokens: RedisConn::default()
     };
 
     let app = Router::new()

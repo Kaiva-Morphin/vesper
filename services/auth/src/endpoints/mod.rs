@@ -1,3 +1,4 @@
+pub mod recovery_password;
 pub mod oauth;
 pub mod refresh;
 pub mod register;

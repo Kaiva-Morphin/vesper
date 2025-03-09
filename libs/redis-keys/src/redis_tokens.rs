@@ -30,7 +30,7 @@ env_config! {
 
 
 #[derive(Clone)]
-pub struct RedisTokens{
+pub struct RedisConn{
     pool: r2d2::Pool<Client>
 }
 
@@ -62,10 +62,10 @@ fn crfs_to_key(crfs: &String) -> String{
     format!("{}::{}", CRFS_TOKEN_PREFIX, crfs)
 }
 
-impl RedisTokens {
+impl RedisConn {
     pub fn default() -> Self {
         let redis_client = redis::Client::open(format!("{}/{}", CFG.REDIS_URL.to_string(), CFG.TOKEN_DB_PREFIX)).expect("Can't connect to redis!");
-        RedisTokens{
+        RedisConn{
             pool: r2d2::Pool::builder().build(redis_client).expect("Can't create pool for redis!")
         }
     }

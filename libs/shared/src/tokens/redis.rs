@@ -1,23 +1,23 @@
 use chrono::Utc;
 use r2d2::PooledConnection;
-use redis::{Client, Commands, FromRedisValue, RedisError, RedisResult};
+use redis::{Client, FromRedisValue, RedisError, RedisResult};
 use reqwest::StatusCode;
 use uuid::Uuid;
-
+pub use redis::Commands;
 use crate::{default_err, CFG, ENV};
 
 use super::jwt::RefreshTokenRecord;
 use anyhow::Result;
 
 #[derive(Clone)]
-pub struct RedisTokens{
-    pool: r2d2::Pool<Client>
+pub struct RedisConn{
+    pub pool: r2d2::Pool<Client>
 }
 
 
 const REFRESH_TOKEN_PREFIX : &'static str = "RTID";
 const USER_TOKEN_PAIR_PREFIX : &'static str = "UTPP";
-const CRFS_TOKEN_PREFIX : &'static str = "CRFS";
+// const CRFS_TOKEN_PREFIX : &'static str = "CRFS";
 //const TEMPORARY_USERDATA_TOKEN_PREFIX : &'static str = "TMPR";
 
 fn rtid_to_key(rtid: Uuid) -> String{
@@ -37,10 +37,10 @@ fn user_to_key(user: Uuid) -> String{
 }*/
 
 
-impl RedisTokens {
+impl RedisConn {
     pub fn default() -> Self {
         let redis_client = redis::Client::open(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, ENV.REDIS_TOKEN_DB)).expect("Can't connect to redis!");
-        RedisTokens{
+        RedisConn{
             pool: r2d2::Pool::builder().build(redis_client).expect("Can't create pool for redis!")
         }
     }
@@ -64,15 +64,15 @@ impl RedisTokens {
         Ok(())
     }
 
-    pub fn get_refresh(&self, rtid: Uuid) -> Result<Option<RefreshTokenRecord>>
+    pub fn get_refresh(&self, rtid: String) -> Result<Option<RefreshTokenRecord>>
     {
         let mut conn = self.pool.get()?;
         self.get_refresh_conn(rtid, &mut conn)
     }
 
-    fn get_refresh_conn(&self, rtid: Uuid, conn : &mut PooledConnection<Client>) -> Result<Option<RefreshTokenRecord>>
+    fn get_refresh_conn(&self, rtid: String, conn : &mut PooledConnection<Client>) -> Result<Option<RefreshTokenRecord>>
     {
-        let s : Option<String> = conn.get(rtid_to_key(rtid))?;
+        let s : Option<String> = conn.get(rtid)?;
         let Some(s) = s else {return Ok(None)};
         let v = serde_json::from_str(s.as_str())?;
         Ok(v)
@@ -81,7 +81,7 @@ impl RedisTokens {
     pub fn rm_refresh(&self, rtid: Uuid) -> Result<()> {
         let rtid_key = rtid_to_key(rtid);
         let mut conn = self.pool.get()?;
-        if let Ok(Some(record)) = self.get_refresh_conn(rtid, &mut conn) {
+        if let Ok(Some(record)) = self.get_refresh_conn(rtid_key.clone(), &mut conn) {
             let _: Result<(), RedisError> = conn.zrem(user_to_key(record.user), rtid_key.clone());
         }
         let _: Result<(), RedisError> = conn.del(rtid_key);
@@ -92,14 +92,14 @@ impl RedisTokens {
     {
         let rtid_key = rtid_to_key(rtid);
         let mut conn = self.pool.get()?;
-        if let Ok(record) = self.get_refresh_conn(rtid, &mut conn) {
+        if let Ok(record) = self.get_refresh_conn(rtid_key.clone(), &mut conn) {
             let Some(record) = record else {return Ok(None)};
             let _: Result<(), RedisError> = conn.zrem(user_to_key(record.user), rtid_key.clone());
             let _: Result<(), RedisError> = conn.del(rtid_key);
             return Ok(Some(record))
         }
-        let _: Result<(), RedisError> = conn.del(rtid_key);
-        default_err!()
+        // let _: Result<(), RedisError> = conn.del(rtid_key);
+        Ok(None)
     }
 
     // pub fn set_crfs(

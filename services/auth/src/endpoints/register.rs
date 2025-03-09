@@ -99,9 +99,11 @@ pub async fn register(
     headers: HeaderMap,
     Json(request_body): Json<RegisterBody>,
 ) -> Result<impl IntoResponse, AppErr> {
+    let Ok(_) = request_body.validate() else {return Ok((StatusCode::BAD_REQUEST, "Invalid data sent!").into_response())};
     #[cfg(not(feature = "disable_turnstile"))]
     if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::BAD_REQUEST, "Turnstile failed").into_response())};
-    let Ok(_) = request_body.validate() else {return Ok((StatusCode::BAD_REQUEST, "Invalid data sent!").into_response())};
+    #[cfg(not(feature = "disable_email"))]
+    if !state.verify_register_code(request_body.email_code.clone(), request_body.email.clone())? {return Ok((StatusCode::BAD_REQUEST, "Invalid email code!").into_response())};
     let fingerprint = request_body.fingerprint.clone();
     let v = state.register_user(request_body).await?;
     let user_id = match v {Ok(user) => user, Err(msg) => return Ok((StatusCode::CONFLICT, msg).into_response())};
@@ -123,6 +125,6 @@ pub async fn request_register_code(
 ) -> Result<impl IntoResponse, AppErr> {
     #[cfg(not(feature = "disable_turnstile"))]
     if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::UNAUTHORIZED, "Turnstile failed").into_response())};
-    state.send_register_code(request_body.email).await?;
+    state.send_register_code(&request_body.email).await?;
     Ok("Code sent".into_response())
 }

@@ -9,7 +9,7 @@ use crate::{auth::oauth::shared::CRFS_LIFETIME, shared::{env::REDIS_URL, errors:
 use super::vars::REDIS_TOKEN_DB;
 
 #[derive(Clone)]
-pub struct RedisTokens{
+pub struct RedisConn{
     pool: r2d2::Pool<Client>
 }
 
@@ -47,10 +47,10 @@ fn crfs_to_key(crfs: &String) -> String{
 }*/
 
 
-impl RedisTokens {
+impl RedisConn {
     pub fn default() -> Self {
         let redis_client = redis::Client::open(format!("{}/{}", REDIS_URL.to_string(), REDIS_TOKEN_DB)).expect("Can't connect to redis!");
-        RedisTokens{
+        RedisConn{
             pool: r2d2::Pool::builder().build(redis_client).expect("Can't create pool for redis!")
         }
     }

@@ -11,7 +11,7 @@
 				"$rustc"
 			],
 			"group": {
-				"kind": "build",
+				"kind": "none",
 				"isDefault": true
 			},
 			"options": {
@@ -30,7 +30,7 @@
 				"$rustc"
 			],
 			"group": {
-				"kind": "build",
+				"kind": "none",
 				"isDefault": true
 			},
 			"options": {
@@ -47,7 +47,7 @@
 			],
 			"problemMatcher": [],
 			"group": {
-				"kind": "build",
+				"kind": "none",
 				"isDefault": true
 			},
 			"options": {

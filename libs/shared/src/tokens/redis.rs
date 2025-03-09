@@ -49,7 +49,7 @@ impl RedisConn {
     {
         let mut conn = self.pool.get()?;
         let now = Utc::now().timestamp();
-        let user_key = user_to_key(record.rtid);
+        let user_key = user_to_key(record.user);
         let valid_values: Vec<String> = conn.zrangebyscore(user_key.clone(), now, "+inf")?;
         if valid_values.len() >= CFG.REDIS_MAX_LIVE_SESSIONS { // ERASE ALL SESSIONS
             for rtid_key in valid_values {
@@ -85,6 +85,16 @@ impl RedisConn {
             let _: Result<(), RedisError> = conn.zrem(user_to_key(record.user), rtid_key.clone());
         }
         let _: Result<(), RedisError> = conn.del(rtid_key);
+        Ok(())
+    }
+
+    pub fn rm_all_refresh(&self, user: Uuid) -> Result<()> {
+        let mut conn = self.pool.get()?;
+        let user_key = user_to_key(user);
+        let keys: Vec<String> = conn.zrangebyscore(user_key.clone(), "-inf", "+inf")?;
+        for rtid_key in keys {
+            let _: Result<(), RedisError> = conn.del(rtid_key);
+        }
         Ok(())
     }
 

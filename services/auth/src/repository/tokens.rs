@@ -2,7 +2,7 @@ use axum::{http::HeaderMap, Json};
 use axum_extra::extract::CookieJar;
 use sea_orm::{prelude::Uuid, sqlx::types::chrono::Utc};
 use sha2::Digest;
-use shared::tokens::{jwt::{AccessTokenPayload, AccessTokenResponse, RefreshTokenPayload, RefreshTokenRecord, TokenEncoder}, redis::RedisConn};
+use shared::tokens::jwt::{AccessTokenPayload, AccessTokenResponse, RefreshRules, RefreshTokenPayload, RefreshTokenRecord, TokenEncoder};
 
 use anyhow::Result;
 use tracing::info;
@@ -14,7 +14,7 @@ fn hash_fingerprint(fp: &String) -> String {
     format!("{:x}", sha2::Sha256::digest(fp.as_bytes()))
 }
 
-pub fn generate_access(user_id: Uuid) ->  Result<AccessTokenResponse> {
+pub fn generate_access(user_id: Uuid) ->  Result<AccessTokenResponse> { // todo: move to state
     let exp = Utc::now().timestamp() + CFG.REDIS_ACCESS_TOKEN_LIFETIME as i64;
     let access_payload = AccessTokenPayload {
         user: user_id,
@@ -36,6 +36,8 @@ pub fn generate_and_put_refresh(
     fingerprint: String,
     user_agent: String,
     user_ip: String,
+    email: String,
+    rules: RefreshRules
 ) -> Result<CookieJar> {
     let rtid: Uuid = Uuid::new_v4();
     info!("Generating refresh token for {}. ip: {} fingerprint: {} user-agent: {}", user_id, user_ip, hash_fingerprint(&fingerprint), user_agent);
@@ -44,12 +46,14 @@ pub fn generate_and_put_refresh(
         user: *user_id,
         fingerprint,
         user_agent,
-        ip: user_ip
+        ip: user_ip,
+        email
     };
     let refresh_payload = RefreshTokenPayload{
         rtid,
         user: *user_id,
-        exp: Utc::now().timestamp() + CFG.REDIS_REFRESH_TOKEN_LIFETIME as i64
+        exp: Utc::now().timestamp() + CFG.REDIS_REFRESH_TOKEN_LIFETIME as i64,
+        rules
     };
     let refresh_token = TokenEncoder::encode_refresh(refresh_payload)?;
     state.redis.set_refresh(refresh_record)?;

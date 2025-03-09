@@ -104,9 +104,12 @@ pub async fn register(
     #[cfg(not(feature = "disable_email"))]
     if !state.verify_register_code(request_body.email_code.clone(), request_body.email.clone())? {return Ok((StatusCode::BAD_REQUEST, "Invalid email code!").into_response())};
     let fingerprint = request_body.fingerprint.clone();
-    let v = state.register_user(request_body).await?;
-    let user_id = match v {Ok(user) => user, Err(msg) => return Ok((StatusCode::CONFLICT, msg).into_response())};
-    let jar = generate_and_put_refresh(jar, &state, &user_id, fingerprint, get_user_agent(&headers), get_user_ip(&headers))?;
+    let email = request_body.email.clone();
+    let r = state.register_user(request_body).await?;
+    let Ok((user_id, rules)) = r else {
+        return Ok((StatusCode::CONFLICT, r.err().unwrap()).into_response())
+    };
+    let jar = generate_and_put_refresh(jar, &state, &user_id, fingerprint, get_user_agent(&headers), get_user_ip(&headers), email, rules)?;
     let access_response = generate_access(user_id)?;
     Ok((jar, access_response).into_response())
 }

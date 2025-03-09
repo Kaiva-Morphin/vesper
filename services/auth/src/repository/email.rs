@@ -10,6 +10,7 @@ use sea_orm::{prelude::Uuid, *};
 use anyhow::Result;
 use sha2::Digest;
 use sha2::Sha256;
+use shared::tokens::jwt::RefreshRules;
 use shared::tokens::redis::Commands;
 use shared::tokens::redis::RedisConn;
 use shared::uuid;
@@ -71,7 +72,7 @@ impl EmailCode {
             kind: match self.kind {
                 CodeKind::Register => EmailKind::RegisterCode { code: self.code },
                 CodeKind::PasswordRecovery => {
-                    warn!("CODE INSTEAD OF LINK");
+                    // todo!: link instead of code
                     EmailKind::RecoveryRequest { link: self.code }
                 }
             },
@@ -202,6 +203,50 @@ impl AppState {
         Ok(())
     }
 
+    pub async fn send_new_login(&self, email: &String, ip : String, user_agent : String) -> Result<()> {
+        info!("Sending new login to {}", email);
+        let email = Email{
+            to: email.clone(),
+            kind: EmailKind::NewLogin { ip, user_agent }
+        };
+        let encoded =  bincode::encode_to_vec(&email, bincode::config::standard())?;
+        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
+            .await?
+            .await?;
+        info!("Sended to nats!");
+        Ok(())
+    }
+
+    pub async fn send_suspicious_refresh(&self, email: &String, ip : String, user_agent : String) -> Result<()> {
+        info!("Sending suspicious refresh to {}", email);
+        let email = Email{
+            to: email.clone(),
+            kind: EmailKind::SuspiciousRefresh { ip, user_agent }
+        };
+        let encoded =  bincode::encode_to_vec(&email, bincode::config::standard())?;
+        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
+            .await?
+            .await?;
+        info!("Sended to nats!");
+        Ok(())
+    }
+
+    
+
+    pub async fn send_refresh_rules_update(&self, email: &String, ip : String, user_agent : String) -> Result<()> {
+        info!("Sending rule update to {}", email);
+        let email = Email{
+            to: email.clone(),
+            kind: EmailKind::RefreshRulesUpdate { ip, user_agent }
+        };
+        let encoded =  bincode::encode_to_vec(&email, bincode::config::standard())?;
+        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
+            .await?
+            .await?;
+        info!("Sended to nats!");
+        Ok(())
+    }
+
     pub fn verify_register_code(&self, code: String, email: String) -> Result<bool> {
         let email_code = EmailCode{
             kind: CodeKind::Register,
@@ -212,7 +257,6 @@ impl AppState {
     }
     pub async fn recovery_password(&self, code: &String, new_password: String) -> Result<Option<()>> {
         if let Some(email) = self.redis.pop_recovery_email(code)? {
-            info!("Email {email}");
             self.set_password(&email, new_password).await?;
             self.send_changed_notification(&email, ChangedField::Password).await?;
             return Ok(Some(()));

@@ -19,11 +19,25 @@ pub struct AccessTokenPayload {
     pub exp: i64
 }
 
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RefreshRules {
+    pub warn_suspicious_refresh : bool,
+    pub allow_suspicious_refresh : bool,
+}
+
+impl RefreshRules {
+    pub fn is_insecure(&self) -> bool {
+        (!self.warn_suspicious_refresh) || self.allow_suspicious_refresh
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RefreshTokenPayload {
     pub rtid: Uuid,
     pub user: Uuid,
-    pub exp: i64
+    pub exp: i64,
+    pub rules: RefreshRules
 }
 
 
@@ -31,9 +45,10 @@ pub struct RefreshTokenPayload {
 pub struct RefreshTokenRecord {
     pub rtid: Uuid,
     pub user: Uuid,
-    pub fingerprint: String, // todo: does it really important?
+    pub email: String,
+    pub fingerprint: String,
     pub ip: String,
-    pub user_agent: String // todo: does it really important?
+    pub user_agent: String
 }
 
 

@@ -35,8 +35,8 @@ env_config!(
         EMAIL_SEND_NATS_EVENT : String,
     }
     ".cfg" => CFG = Cfg {
-        REDIS_REFRESH_TOKEN_LIFETIME : u64 = 30 * 24 * 60 * 60, // 30 days
-        REDIS_ACCESS_TOKEN_LIFETIME : u64 = 15 * 60, // 15 min
+        REFRESH_TOKEN_LIFETIME : u64 = 30 * 24 * 60 * 60, // 30 days
+        ACCESS_TOKEN_LIFETIME : u64 = 15 * 60, // 15 min
         REDIS_MAX_LIVE_SESSIONS : usize = 5,
         MIN_LOGIN_LENGTH : usize = 4,
         MAX_LOGIN_LENGTH : usize = 24,
@@ -84,9 +84,9 @@ async fn main() -> Result<()>{
         .layer(RateLimitLayer::new(1, Duration::from_secs(30))); // TODO!: check header for CF-Connecting-IP from cloudflare. Also limit authed users to ~10 actions/sec
     
     let app = Router::new()
-        .route("/refresh_tokens", get(refresh_tokens).layer(hard_limit_layer.clone()))
+        .route("/refresh_tokens", post(refresh_tokens).layer(hard_limit_layer.clone()))
         .route("/get_register_criteria", get(get_criteria))
-        .route("/logout_other", get(logout_other))
+        .route("/logout_other", post(logout_other))
         .route("/check_username", get(check_username))
         .route("/request_register_code", post(request_register_code).layer(hard_limit_layer.clone()))
         .route("/register", post(register))

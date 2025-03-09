@@ -48,8 +48,8 @@ impl TokenCookie for CookieJar {
         refresh.set_secure(true);
         refresh.set_same_site(SameSite::Strict);
         refresh.set_http_only(true);
-        refresh.set_max_age(Duration::seconds(CFG.REDIS_REFRESH_TOKEN_LIFETIME as i64));
-        refresh.set_path("/api/auth");
+        refresh.set_max_age(Duration::seconds(CFG.REFRESH_TOKEN_LIFETIME as i64));
+        //todo: refresh.set_path("/api/auth");
         //todo: refresh.set_domain("kaiv.space");
         self.add(refresh)
     }

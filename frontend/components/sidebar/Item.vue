@@ -84,6 +84,7 @@ const isSelected = computed(() => route.path === props.link);
     padding-top: 7px;
     overflow: hidden;
     outline-width: var(--default-border-size);
+    outline-width: 0;
     transform: translate(0px, 0px);
     outline-color: color-mix(in srgb, var(--color-primary) 0%, transparent);
     /*transform: translate(0px, -5px) scale(1.05, 1.05);*/

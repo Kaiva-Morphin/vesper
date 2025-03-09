@@ -1,4 +1,3 @@
-use axum::{http::HeaderMap, Json};
 use axum_extra::extract::CookieJar;
 use sea_orm::{prelude::Uuid, sqlx::types::chrono::Utc};
 use sha2::Digest;
@@ -10,12 +9,12 @@ use tracing::info;
 use crate::{repository::cookies::TokenCookie, AppState, CFG};
 
 
-fn hash_fingerprint(fp: &String) -> String {
+pub fn hash_fingerprint(fp: &String) -> String {
     format!("{:x}", sha2::Sha256::digest(fp.as_bytes()))
 }
 
 pub fn generate_access(user_id: Uuid) ->  Result<AccessTokenResponse> { // todo: move to state
-    let exp = Utc::now().timestamp() + CFG.REDIS_ACCESS_TOKEN_LIFETIME as i64;
+    let exp = Utc::now().timestamp() + CFG.ACCESS_TOKEN_LIFETIME as i64;
     let access_payload = AccessTokenPayload {
         user: user_id,
         exp
@@ -52,10 +51,11 @@ pub fn generate_and_put_refresh(
     let refresh_payload = RefreshTokenPayload{
         rtid,
         user: *user_id,
-        exp: Utc::now().timestamp() + CFG.REDIS_REFRESH_TOKEN_LIFETIME as i64,
+        exp: Utc::now().timestamp() + CFG.REFRESH_TOKEN_LIFETIME as i64,
         rules
     };
     let refresh_token = TokenEncoder::encode_refresh(refresh_payload)?;
+    info!("Rtid {rtid}");
     state.redis.set_refresh(refresh_record)?;
     Ok(jar.put_refresh(refresh_token))
 }

@@ -1,13 +1,15 @@
 <template>
-  <div :class="['sidebar_allocator sticky h-screen z-10 top-0 left-0 flex-auto flex flex-row', useNuxtApp().$sidebarMinimized.value ? 'min-w-[64px]' : 'min-w-[12rem]']"> <!-- min-w-[48px] {{useNuxtApp().$sidebarLeft ? {'min-w-[48px]'} : {'min-w-[12rem]'}}}-->
+  <div :class="['sidebar_allocator sticky h-screen z-10 top-0 left-0 flex-auto flex flex-row max-w-content', 
+    useNuxtApp().$sidebarMinimized.value ? 'min-w-[64px]' : 'min-w-[12rem]',
+  ]"> <!-- min-w-[48px] {{useNuxtApp().$sidebarLeft ? {'min-w-[48px]'} : {'min-w-[12rem]'}}}-->
     <div
     :class="['sidebar flex flex-col z-10 absolute no-scrollbar top-0 right-0 h-screen overflow-scroll',
     useNuxtApp().$sidebarLeft.value ? 'left_sidebar' : 'right_sidebar',
     useNuxtApp().$sidebarMinimized.value ? 'minimized_sidebar' : 'maximized_sidebar'
 
     ]"> <!-- sidebar {{useNuxtApp().$sidebarLeft ? 'sidebar' : 'static_sidebar'}}-->
-        <VesperFullLogoAdapt class="m-2"/>
-        <div class="sidebar_separator"></div>
+        <!-- <VesperFullLogoAdapt class="m-2"/> -->
+        <!-- <div class="sidebar_separator"></div> -->
         <SidebarItem text="Home" link="/" icon="ci:house-01"></SidebarItem>
         <div class="sidebar_separator"></div>
         <SidebarItem text="Calls" link="/call" icon="ci:phone"></SidebarItem>

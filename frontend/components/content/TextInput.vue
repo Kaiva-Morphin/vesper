@@ -1,5 +1,5 @@
 <template>
-  <input class="custom_input">
+  <input class="custom_input unselectable">
   </input>
 </template>
 

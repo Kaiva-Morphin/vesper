@@ -1,15 +1,14 @@
-
 <template>
   <div class="relative w-full">
     <input
       :type="showPassword ? 'text' : 'password'"
       v-model="password"
-      class="w-full custom_input"
+      class="w-full custom_input unselectable"
       :placeholder="placeholder"
     />
     <button
       type="button"
-      class="absolute right-2 top-1/2 transform -translate-y-1/2 text-[var(--color-primary)] flex"
+      class="absolute right-1 top-1/2 transform -translate-y-1/2 text-[var(--color-primary)] w-8 h-8 flex items-center justify-center"
       @click="togglePassword"
     >
       <Icon :name="showPassword ? 'mdi-eye-off' : 'mdi-eye'" class="w-5 h-5" />

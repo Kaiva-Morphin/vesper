@@ -11,7 +11,7 @@ export default defineNuxtConfig({
     'nuxt-security',
     '@nuxtjs/device',
     '@nuxtjs/google-fonts',
-    '@nuxt/image'
+    '@nuxt/image',
   ],
   css: [
     'public/variables.css',
@@ -23,7 +23,12 @@ export default defineNuxtConfig({
   ],
   googleFonts: {
     families: {
-      Inter: [100, 300, 400, 500, 700, 900]
+      Inter: [100, 300, 400, 500, 700, 900],
+      Lexend: [100, 300, 400, 500, 700, 900],
+      "Golos Text": [100, 300, 400, 500, 700, 900],
+      "Geist Mono": [100, 300, 400, 500, 700, 900],
+      "Roboto": [100, 300, 400, 500, 700, 900],
     }
-  }
+  },
+
 })

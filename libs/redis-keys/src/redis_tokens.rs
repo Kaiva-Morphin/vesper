@@ -11,20 +11,17 @@ use anyhow::Result;
 
 
 env_config! {
-    "redis.env" =>
-    CFG = EnvConfig {
+    ".env" => ENV = Env {
         TOKEN_DB_PREFIX : String = "4".to_string(),
-        CALLS_DB_PREFIX : String = "5".to_string(),
-        MAX_LIVE_SESSIONS : usize = 5,
+        //CALLS_DB_PREFIX : String = "5".to_string(),
         REDIS_URL : String,
     }
 }
 
 env_config! {
-    "shared.env" =>
-    ENV = SharedEnv {
-        REFRESH_TOKEN_LIFETIME : u64,
-        CRFS_LIFETIME : u64,
+    ".cfg" => CFG = Cfg {
+        REFRESH_TOKEN_LIFETIME : u64 = 30 * 24 * 60 * 60,
+        REDIS_MAX_LIVE_SESSIONS : usize = 5,
     }
 }
 
@@ -64,7 +61,7 @@ fn crfs_to_key(crfs: &String) -> String{
 
 impl RedisConn {
     pub fn default() -> Self {
-        let redis_client = redis::Client::open(format!("{}/{}", CFG.REDIS_URL.to_string(), CFG.TOKEN_DB_PREFIX)).expect("Can't connect to redis!");
+        let redis_client = redis::Client::open(format!("{}/{}", ENV.REDIS_URL, ENV.TOKEN_DB_PREFIX)).expect("Can't connect to redis!");
         RedisConn{
             pool: r2d2::Pool::builder().build(redis_client).expect("Can't create pool for redis!")
         }
@@ -74,9 +71,9 @@ impl RedisConn {
     {
         let mut conn = self.pool.get()?;
         let now = Utc::now().timestamp();
-        let user_key = user_to_key(record.rtid);
+        let user_key = user_to_key(record.user);
         let valid_values: Vec<String> = conn.zrangebyscore(user_key.clone(), now, "+inf")?;
-        if valid_values.len() >= CFG.MAX_LIVE_SESSIONS { // ERASE ALL SESSIONS
+        if valid_values.len() >= CFG.REDIS_MAX_LIVE_SESSIONS { // ERASE ALL SESSIONS
             for rtid_key in valid_values {
                 let _: Result<(), RedisError> = conn.del(rtid_key);
             }
@@ -84,8 +81,8 @@ impl RedisConn {
         } else { // ERASE OUTDATED SESSIONS
             let _: () = conn.zrembyscore(user_key.clone(), "-inf", now)?;
         }
-        let _: () = conn.zadd(user_key.clone(), rtid_to_key(record.rtid), now + ENV.REFRESH_TOKEN_LIFETIME as i64)?;
-        let _: () = conn.set_ex(rtid_to_key(record.rtid), record.rtid.to_string(), ENV.REFRESH_TOKEN_LIFETIME)?;
+        let _: () = conn.zadd(user_key.clone(), rtid_to_key(record.rtid), now + CFG.REFRESH_TOKEN_LIFETIME as i64)?;
+        let _: () = conn.set_ex(rtid_to_key(record.rtid), record.rtid.to_string(), CFG.REFRESH_TOKEN_LIFETIME)?;
         Ok(())
     }
 
@@ -127,35 +124,35 @@ impl RedisConn {
         Ok(None)
     }
 
-    pub fn set_crfs(
-        &self,
-        crfs: &String,
-        provider: String
-    ) -> Result<()> {
-        let mut conn = self.pool.get()?;
-        let _ : () = conn.set_ex(crfs_to_key(crfs), provider, ENV.CRFS_LIFETIME)?;
-        Ok(())
-    }
+    // pub fn set_crfs(
+    //     &self,
+    //     crfs: &String,
+    //     provider: String
+    // ) -> Result<()> {
+    //     let mut conn = self.pool.get()?;
+    //     let _ : () = conn.set_ex(crfs_to_key(crfs), provider, CFG.CRFS_LIFETIME)?;
+    //     Ok(())
+    // }
 
-    pub fn get_crfs(
-        &self,
-        crfs: &String
-    ) -> Result<Option<String>> {
-        let mut conn = self.pool.get()?;
-        let v : Option<String> = conn.get(crfs_to_key(crfs))?;
-        Ok(v)
-    }
+    // pub fn get_crfs(
+    //     &self,
+    //     crfs: &String
+    // ) -> Result<Option<String>> {
+    //     let mut conn = self.pool.get()?;
+    //     let v : Option<String> = conn.get(crfs_to_key(crfs))?;
+    //     Ok(v)
+    // }
 
-    pub fn pop_crfs(
-        &self,
-        crfs: &String
-    ) -> Result<Option<String>> {
-        let mut conn = self.pool.get()?;
-        let crfs_key = crfs_to_key(crfs);
-        let v : Option<String> = conn.get(crfs_key.clone())?;
-        let _ : () = conn.del(crfs_key)?;
-        Ok(v)
-    }
+    // pub fn pop_crfs(
+    //     &self,
+    //     crfs: &String
+    // ) -> Result<Option<String>> {
+    //     let mut conn = self.pool.get()?;
+    //     let crfs_key = crfs_to_key(crfs);
+    //     let v : Option<String> = conn.get(crfs_key.clone())?;
+    //     let _ : () = conn.del(crfs_key)?;
+    //     Ok(v)
+    // }
 
     /*pub fn set_tmpr(
         &self,

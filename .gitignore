@@ -45,3 +45,5 @@ public.pem
 #/target
 
 /.vscode
+/.vscode/*
+tasks.json

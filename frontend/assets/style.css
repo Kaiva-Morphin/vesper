@@ -1,12 +1,15 @@
+  
 :root {
     background-color: var(--color-background);
     /* font-family: "Inter", serif; */
     font-family: "JetBrains Mono", monospace;
     font-optical-sizing: auto;
-    font-weight: 300;
     font-style: normal;
 }
-
+::selection {
+    color: var(--color-shadow);
+    background: var(--color-primary);
+  }
 /** {transition: all var(--interpolation-speed) var(--interpolation-method);}*/
 
 .undraggable {
@@ -17,7 +20,8 @@
     -webkit-user-select: none;
     -ms-user-select: none;
 }
-.unselectabe{
+
+.unselectable{
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;

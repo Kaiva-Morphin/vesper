@@ -1,6 +1,72 @@
 {
 	"tasks": [
 		{
+			"type": "process",
+            "command": "powershell",
+			"args": [
+				"-Command",
+				"npm",
+				"run",
+				"dev"
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+			"label": "vesper: run frontend"
+		},
+		{
+			"type": "process",
+            "command": "powershell",
+			"args": [
+				"-Command",
+				"sea-orm-cli",
+				"migrate",
+				"-d",
+				"./libs/postgre/migrations",
+				"-u",
+				"postgresql://root:root@localhost:31020/vesper",
+				"generate",
+				"latest"
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: new migration"
+		},
+		{
+			"type": "process",
+            "command": "powershell",
+			"args": [
+				"-Command",
+				"sea-orm-cli",
+				"generate",
+				"entity",
+				"-o",
+				"./libs/postgre/entities/src",
+				"-u",
+				"postgresql://root:root@localhost:31020/vesper",
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: generate entity"
+		},
+		{
 			"type": "cargo",
 			"command": "run",
             "args": [

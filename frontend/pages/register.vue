@@ -1,8 +1,10 @@
 <template>
-    <CardCentered class="flex w-full h-full justify-center items-center relative">
+    <CardCentered class="flex w-full h-full justify-center items-center">
       <VesperFullLogoAdapt class="m-8 w-[236px]"/>
       <div class="relative w-full h-0 bg-inherit ">
         <div class="absolute w-full bottom-0 bg-inherit">
+          <ContentMessage jumpy id="username_status" class="hidden">Username taken!</ContentMessage>
+
           <!-- <ContentMessage jumpy id="username_status">Username taken!</ContentMessage> -->
           <!-- <ContentMessage>Username Available!</ContentMessage> -->
           <!-- <ContentMessage>Checking<Icon name="eos-icons:bubble-loading"/></ContentMessage> -->
@@ -11,7 +13,7 @@
       <ContentTextInput placeholder="login"/>
       <!-- <ContentMessage jumpy>Password is incorrect!</ContentMessage> -->
       <ContentPasswordInput placeholder="password"/>
-      <Capcha/>
+      <Turnstile/>
       <ContentTextInput placeholder="email"></ContentTextInput>
       <div class="h-fit w-full flex justify-between flex-row gap-[10px]">
         <ContentBorderButton>Send code</ContentBorderButton>

@@ -153,11 +153,10 @@ void main() {
     float treshold = 0.2;
 
     if (mod(v * subs, 1.0) > treshold) {
-      color = COLOR_ACCENT * 0.0;
+      color = COLOR_ACCENT * 0.05 * v;
     } else {
       color = COLOR_ACCENT * 0.12;
     }
-
     //color = vec3(smoothstep(0.0, 150.0, dist)) ;
 
     //color = vec3( dist/ 500.0 );

@@ -2,6 +2,7 @@ use chrono::Utc;
 use r2d2::PooledConnection;
 use redis::{Client, FromRedisValue, RedisError, RedisResult};
 use reqwest::StatusCode;
+use tracing::info;
 use uuid::Uuid;
 pub use redis::Commands;
 use crate::{default_err, CFG, ENV};
@@ -60,7 +61,7 @@ impl RedisConn {
             let _: () = conn.zrembyscore(user_key.clone(), "-inf", now)?;
         }
         let _: () = conn.zadd(user_key.clone(), rtid_to_key(record.rtid), now + CFG.REDIS_REFRESH_TOKEN_LIFETIME as i64)?;
-        let _: () = conn.set_ex(rtid_to_key(record.rtid), record.rtid.to_string(), CFG.REDIS_REFRESH_TOKEN_LIFETIME)?;
+        let _: () = conn.set_ex(rtid_to_key(record.rtid), serde_json::to_string(&record)?, CFG.REDIS_REFRESH_TOKEN_LIFETIME)?;
         Ok(())
     }
 
@@ -90,6 +91,7 @@ impl RedisConn {
 
     pub fn rm_all_refresh(&self, user: Uuid) -> Result<()> {
         let mut conn = self.pool.get()?;
+        info!("Removing all refresh tokens!");
         let user_key = user_to_key(user);
         let keys: Vec<String> = conn.zrangebyscore(user_key.clone(), "-inf", "+inf")?;
         for rtid_key in keys {
@@ -100,15 +102,18 @@ impl RedisConn {
 
     pub fn pop_refresh(&self, rtid: Uuid) -> Result<Option<RefreshTokenRecord>>
     {
+        info!("Popping refresh for {rtid}");
         let rtid_key = rtid_to_key(rtid);
         let mut conn = self.pool.get()?;
         if let Ok(record) = self.get_refresh_conn(rtid_key.clone(), &mut conn) {
+            info!("Record found!");
             let Some(record) = record else {return Ok(None)};
             let _: Result<(), RedisError> = conn.zrem(user_to_key(record.user), rtid_key.clone());
             let _: Result<(), RedisError> = conn.del(rtid_key);
             return Ok(Some(record))
         }
         // let _: Result<(), RedisError> = conn.del(rtid_key);
+        info!("No record!");
         Ok(None)
     }
 

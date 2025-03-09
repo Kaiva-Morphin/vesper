@@ -2,7 +2,8 @@ use axum::{extract::State, http::{HeaderMap, StatusCode}, response::IntoResponse
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 use shared::{tokens::jwt::TokenEncoder, utils::{app_err::AppErr, header::{get_user_agent, get_user_ip}, verify_turnstile::verify_turnstile}};
-
+use tracing::info;
+use crate::repository::tokens::hash_fingerprint;
 use crate::{repository::{cookies::TokenCookie, tokens::{generate_access, generate_and_put_refresh}}, AppState};
 use anyhow::Result;
 
@@ -28,6 +29,7 @@ pub async fn logout_other(
         if record.fingerprint != payload.fingerprint.clone() ||
             record.user_agent != user_agent {
                 state.send_suspicious_refresh(&record.email, user_agent.clone(), user_ip.clone()).await?;
+                info!("Fingerprint: {} != {} || user agent: {} != {}", hash_fingerprint(&record.fingerprint), hash_fingerprint(&payload.fingerprint), record.user_agent, user_agent);
                 if !refresh_payload.rules.allow_suspicious_refresh {return Ok((StatusCode::UNAUTHORIZED, jar, "Blocked due refresh rules").into_response());}
             };
     }

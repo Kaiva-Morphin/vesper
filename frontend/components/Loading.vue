@@ -1,5 +1,5 @@
 <template>
-  <Icon name="tabler:cube-3d-sphere" class="w-16 h-16 rotate"></Icon>
+  <Icon name="tabler:cube-3d-sphere" class="w-16 h-16 rotate text-[var(--color-primary-muted)]"></Icon>
 </template>
 
 <script lang="ts" setup>
@@ -17,7 +17,7 @@
 .rotate {
   perspective: 200px;
   /*transform: rotate3d(2, -1, -1, var(a));*/
-  animation: animate_rotate 1s ease-in-out infinite;/*animation: animate_rotate 5s linear 2s infinite alternate;*/
+  animation: animate_rotate 2.5s ease-in-out infinite;/*animation: animate_rotate 5s linear 2s infinite alternate;*/
 }
 
 </style>

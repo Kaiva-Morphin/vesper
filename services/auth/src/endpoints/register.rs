@@ -78,7 +78,8 @@ pub struct RegisterBody {
     pub password: String,
     pub email_code: String,
     pub turnstile_response: String,
-    pub fingerprint: String
+    pub fingerprint: String,
+    pub tos_accepted: bool
 }
 
 impl RegisterBody {
@@ -98,6 +99,7 @@ pub async fn register(
     headers: HeaderMap,
     Json(request_body): Json<RegisterBody>,
 ) -> Result<impl IntoResponse, AppErr> {
+    if !request_body.tos_accepted {return Ok((StatusCode::BAD_REQUEST, "Accept ToS!").into_response())};
     let Ok(_) = request_body.validate() else {return Ok((StatusCode::BAD_REQUEST, "Invalid data sent!").into_response())};
     #[cfg(not(feature = "disable_turnstile"))]
     if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::BAD_REQUEST, "Turnstile failed").into_response())};

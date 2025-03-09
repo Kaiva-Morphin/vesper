@@ -29,7 +29,15 @@ services:
     ports:
       - "${NATS_PORT}:4222"
       - "${NATS_MONITOR_PORT}:8222"
-    command: ["-js"] 
+    command: ["-js"] # todo: add storage?
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"  # Это порт, на котором будет доступен интерфейс RedisInsight
+    volumes:
+      - redisinsight-data:/root/.redisinsight  # Сохранение настроек RedisInsight
+    restart: always
   # nginx:
   #   image: nginx:latest
   #   container_name: nginx
@@ -37,3 +45,5 @@ services:
   #     - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
   #   ports:
   #     - "80:80"
+volumes:
+  redisinsight-data:

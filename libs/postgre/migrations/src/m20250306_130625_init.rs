@@ -19,7 +19,7 @@ impl MigrationTrait for Migration {
                     .col(string(UserData::Email).not_null().unique_key())
                     .col(string_null(UserData::DiscordId).unique_key())
                     .col(string_null(UserData::GoogleId).unique_key())
-                    .col(timestamp_null(UserData::LastLoginChange)) //.extra("DEFAULT CURRENT_TIMESTAMP".to_string())
+                    .col(timestamp_null(UserData::LastLoginChange))
                     .col(timestamp(UserData::UpdatedAt).extra("DEFAULT CURRENT_TIMESTAMP".to_string()))
                     .col(timestamp(UserData::CreatedAt).extra("DEFAULT CURRENT_TIMESTAMP".to_string()))
                     .to_owned(),

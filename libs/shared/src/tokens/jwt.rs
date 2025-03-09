@@ -13,7 +13,7 @@ use anyhow::Result;
 
 use include_bytes_plus::include_bytes;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct AccessTokenPayload {
     pub user: Uuid,
     pub exp: i64

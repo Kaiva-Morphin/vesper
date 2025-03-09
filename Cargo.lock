@@ -2443,6 +2443,7 @@ name = "postgre_entities"
 version = "0.1.0"
 dependencies = [
  "sea-orm",
+ "tracing",
 ]
 
 [[package]]

@@ -4,7 +4,7 @@ use async_nats::jetstream::Context;
 use axum::{
     body::Body, error_handling::HandleErrorLayer, extract::{Request, State}, http::{HeaderMap, StatusCode}, response::{IntoResponse, Response}, routing::{get, post}, Json, Router
 };
-use endpoints::{login::login, public_key::get_public_key, register::{self, get_criteria, register, request_register_code}, username::check_username};
+use endpoints::{login::login, public_key::get_public_key, recovery_password::{recovery_password, request_password_recovery}, register::{self, get_criteria, register, request_register_code}, username::check_username};
 use message_broker::publisher::build_publisher;
 use shared::{env_config, tokens::redis::RedisConn};
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
@@ -46,6 +46,7 @@ env_config!(
         MAX_NICKNAME_LENGTH : usize = 32,
         RECOVERY_EMAIL_LIFETIME : u64 = 5 * 60,
         REGISTER_EMAIL_LIFETIME : u64 = 5 * 60,
+        RECOVERY_TOKEN_LEN : usize = 128,
     }
 );
 
@@ -100,7 +101,9 @@ async fn main() -> Result<()>{
         .route("/request_register_code", post(request_register_code)/*.layer(hard_limit_layer)*/)
         .route("/register", post(register))
         .route("/login", post(login))
-        .route("/public_key", get(get_public_key))
+        // .route("/public_key", get(get_public_key)) //todo: move to static file?
+        .route("/recovery_password", post(recovery_password))
+        .route("/request_password_recovery", post(request_password_recovery))
         .with_state(state)
         .layer(limit_layer)
         .layer(tracing_layer);

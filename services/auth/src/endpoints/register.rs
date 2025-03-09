@@ -92,7 +92,6 @@ impl RegisterBody {
 }
 
 
-#[axum::debug_handler]
 pub async fn register(
     State(state): State<AppState>,
     jar: CookieJar,

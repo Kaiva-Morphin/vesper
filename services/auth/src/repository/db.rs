@@ -29,6 +29,35 @@ impl AppState {
         Ok(Some(user.uuid))
     }
 
+    pub async fn get_email_from_login_cred(
+        &self,
+        email_or_login: &String
+    ) -> Result<Option<String>> {
+        let user = user_data::Entity::find()
+            .filter(user_data::Column::Login.eq(email_or_login).or(user_data::Column::Email.eq(email_or_login)))
+            .one(&self.db).await?;
+        let Some(user) = user else {return Ok(None)};
+        Ok(Some(user.email))
+    }
+
+    pub async fn set_password(
+        &self,
+        email: &String,
+        new_password: String
+    ) -> Result<()> {
+        let user = user_data::Entity::find()
+            .filter(user_data::Column::Email.eq(email))
+            .one(&self.db).await?;
+        let Some(user) = user else {
+            warn!("Can't find user!"); //? Possible only if user request password recovery and delete account?
+            return Ok(())
+        };
+        let mut user: user_data::ActiveModel = user.into();
+        user.password = Set(bcrypt::hash(new_password, bcrypt::DEFAULT_COST)?);
+        user.update(&self.db).await?;
+        Ok(())
+    }
+
 
     pub async fn register_user(
         &self,

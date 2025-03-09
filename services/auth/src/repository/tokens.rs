@@ -27,6 +27,8 @@ pub fn generate_access(user_id: Uuid) ->  Result<AccessTokenResponse> {
     })
 }
 
+
+
 pub fn generate_and_put_refresh(
     jar: CookieJar,
     state: &AppState,

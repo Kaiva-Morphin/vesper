@@ -3,7 +3,7 @@ members = [
     "libs/shared",
     "libs/postgre/migrations",
     "libs/postgre/entities",
-    "services/auth", "libs/redis-keys", "services/email", "libs/message_broker", "libs/postgre/db",
+    "services/auth", "libs/redis-keys", "services/email", "libs/message_broker", "libs/postgre/db", "services/user", "services/groups", "services/calls", "services/posts",
     # "services/old-auth",
 ]
 resolver = "2"

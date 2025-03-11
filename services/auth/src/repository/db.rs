@@ -31,7 +31,7 @@ impl AppState {
         Ok(Some((user.uuid, RefreshRules{warn_suspicious_refresh: user.warn_suspicious_refresh, allow_suspicious_refresh: user.allow_suspicious_refresh})))
     }
 
-    pub async fn update_refresh_rules(&self, email : &String, ip: String, user_agent: String,new_rules: RefreshRules) -> Result<()> {
+    pub async fn update_refresh_rules(&self, email : &String, ip: String, user_agent: String,new_rules: &RefreshRules) -> Result<()> {
         info!("Updating refresh rules for {}", email);
         let user = user_data::Entity::find()
             .filter(user_data::Column::Email.eq(email))

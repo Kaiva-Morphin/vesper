@@ -4,7 +4,7 @@ use async_nats::jetstream::Context;
 use axum::{
     body::Body, error_handling::HandleErrorLayer, extract::{Request, State}, http::{HeaderMap, StatusCode}, response::{IntoResponse, Response}, routing::{get, post}, Json, Router
 };
-use endpoints::{login::login, logout_other::logout_other, recovery_password::{recovery_password, request_password_recovery}, refresh::refresh_tokens, register::{self, get_criteria, register, request_register_code}, username::check_username};
+use endpoints::{login::login, logout_other::logout_other, recovery_password::{recovery_password, request_password_recovery}, refresh::refresh_tokens, register::{self, get_criteria, register, request_register_code}, set_refresh_rules::set_refresh_rules, username::check_username};
 use message_broker::publisher::build_publisher;
 use shared::{env_config, tokens::redis::RedisConn};
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
@@ -20,8 +20,8 @@ mod repository;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db : sea_orm::DatabaseConnection,
-    pub redis: RedisConn,
+    pub db : sea_orm::DatabaseConnection, // arc
+    pub redis: RedisConn, // arc
     pub publisher: Context
 }
 
@@ -54,6 +54,7 @@ env_config!(
 async fn main() -> Result<()>{
     shared::utils::logger::init_logger();
 
+
     let state = AppState{
         db: db::open_database_connection().await?,
         redis: RedisConn::default(),
@@ -72,29 +73,21 @@ async fn main() -> Result<()>{
         .layer(axum::middleware::from_fn(shared::layers::logging::logging_middleware))
         .layer(CatchPanicLayer::new())
         .layer(timeout_layer);
-
-    let limit_layer = ServiceBuilder::new()
-        .layer(HandleErrorLayer::new(handle_too_many_requests))
-        .layer(BufferLayer::new(1024))
-        .layer(RateLimitLayer::new(1, Duration::from_secs(1))); // TODO!: check header for CF-Connecting-IP from cloudflare. Also limit authed users to ~10 actions/sec
-
-    let hard_limit_layer = ServiceBuilder::new()
-        .layer(HandleErrorLayer::new(handle_too_many_requests))
-        .layer(BufferLayer::new(1024))
-        .layer(RateLimitLayer::new(1, Duration::from_secs(30))); // TODO!: check header for CF-Connecting-IP from cloudflare. Also limit authed users to ~10 actions/sec
     
+    
+    // TODO!: USER LIMITER IN NGINX
     let app = Router::new()
-        .route("/refresh_tokens", post(refresh_tokens).layer(hard_limit_layer.clone()))
+        .route("/refresh_tokens", post(refresh_tokens))
+        .route("/set_refresh_rules", post(set_refresh_rules))
         .route("/get_register_criteria", get(get_criteria))
         .route("/logout_other", post(logout_other))
         .route("/check_username", get(check_username))
-        .route("/request_register_code", post(request_register_code).layer(hard_limit_layer.clone()))
+        .route("/request_register_code", post(request_register_code))
         .route("/register", post(register))
         .route("/login", post(login))
         .route("/recovery_password", post(recovery_password))
-        .route("/request_password_recovery", post(request_password_recovery).layer(hard_limit_layer))
+        .route("/request_password_recovery", post(request_password_recovery))
         .with_state(state)
-        .layer(limit_layer)
         .layer(tracing_layer);
     
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", ENV.SERVICE_AUTH_PORT)).await?;
@@ -108,12 +101,4 @@ async fn main() -> Result<()>{
 
     axum::serve(listener, app.into_make_service()).await.unwrap();
     Ok(())
-}
-
-async fn handle_too_many_requests(err: axum::BoxError) -> (StatusCode, String) {
-    info!("To many requests");
-    (
-        StatusCode::TOO_MANY_REQUESTS,
-        format!("To many requests: {}", err)
-    )
 }

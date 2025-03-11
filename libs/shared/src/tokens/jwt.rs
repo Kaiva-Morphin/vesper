@@ -13,14 +13,14 @@ use anyhow::Result;
 
 use include_bytes_plus::include_bytes;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AccessTokenPayload {
     pub user: Uuid,
     pub exp: i64
 }
 
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RefreshRules {
     pub warn_suspicious_refresh : bool,
     pub allow_suspicious_refresh : bool,
@@ -40,6 +40,20 @@ pub struct RefreshTokenPayload {
     pub rules: RefreshRules
 }
 
+// impl RefreshTokenPayload {
+//     pub fn placeholder() -> Self {
+//         RefreshTokenPayload {
+//             rtid: Uuid::default(),
+//             user: Uuid::default(),
+//             exp: 0,
+//             rules: RefreshRules {
+//                 warn_suspicious_refresh: false,
+//                 allow_suspicious_refresh: false
+//             }
+//         }
+//     }
+// }
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RefreshTokenRecord {
@@ -50,6 +64,19 @@ pub struct RefreshTokenRecord {
     pub ip: String,
     pub user_agent: String
 }
+
+// impl RefreshTokenRecord {
+//     pub fn placeholder() -> Self {
+//         RefreshTokenRecord {
+//             rtid: Uuid::nil(),
+//             user: Uuid::nil(),
+//             email: String::new(),
+//             fingerprint: String::new(),
+//             user_agent: String::new(),
+//             ip: String::new()
+//         }
+//     }
+// }
 
 
 #[derive(Default, Debug, Serialize, Deserialize)]

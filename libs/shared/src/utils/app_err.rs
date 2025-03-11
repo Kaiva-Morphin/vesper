@@ -2,7 +2,7 @@ use axum::response::IntoResponse;
 use reqwest::StatusCode;
 use tracing::error;
 
-pub struct AppErr(anyhow::Error);
+pub struct AppErr(pub anyhow::Error);
 
 impl AppErr {
     pub fn default() -> Self {

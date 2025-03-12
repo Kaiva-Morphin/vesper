@@ -49,6 +49,11 @@ impl MigrationTrait for Migration {
                             .to(UserData::Table, UserData::UUID)
                             .on_delete(ForeignKeyAction::Cascade),
                     )
+                    .primary_key(
+                        Index::create()
+                            .col(UserGroup::UserId)
+                            .col(UserGroup::GroupId),
+                    )
                     .to_owned()
             ).await
     }

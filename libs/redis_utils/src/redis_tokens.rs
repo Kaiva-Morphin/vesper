@@ -5,15 +5,12 @@ use reqwest::StatusCode;
 use tracing::info;
 use uuid::Uuid;
 pub use redis::Commands;
-use crate::{default_err, CFG, ENV};
 
-use super::jwt::RefreshTokenRecord;
+use shared::tokens::jwt::RefreshTokenRecord;
 use anyhow::Result;
 
-#[derive(Clone)]
-pub struct RedisConn{
-    pub pool: r2d2::Pool<Client>
-}
+use crate::{redis::RedisConn, CFG, ENV};
+
 
 
 const REFRESH_TOKEN_PREFIX : &'static str = "RTID";
@@ -29,17 +26,10 @@ fn user_to_key(user: Uuid) -> String{
     format!("{}::{}", USER_TOKEN_PAIR_PREFIX, user)
 }
 
-// fn crfs_to_key(crfs: &String) -> String{
-//     format!("{}::{}", CRFS_TOKEN_PREFIX, crfs)
-// }
-
-/*fn tmpr_to_key(tmpr: Uuid) -> String{
-    format!("{}::{}", TEMPORARY_USERDATA_TOKEN_PREFIX, tmpr)
-}*/
 
 
 impl RedisConn {
-    pub fn default() -> Self {
+    pub fn for_tokens() -> Self {
         let redis_client = redis::Client::open(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, ENV.REDIS_TOKEN_DB)).expect("Can't connect to redis!");
         RedisConn{
             pool: r2d2::Pool::builder().build(redis_client).expect("Can't create pool for redis!")

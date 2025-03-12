@@ -56,7 +56,7 @@ pub fn generate_and_put_refresh(
     };
     let refresh_token = TokenEncoder::encode_refresh(refresh_payload)?;
     info!("Rtid {rtid}");
-    state.redis.set_refresh(refresh_record)?;
+    state.redis_tokens.set_refresh(refresh_record)?;
     Ok(jar.put_refresh(refresh_token))
 }
 

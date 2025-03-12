@@ -29,16 +29,6 @@ impl MigrationTrait for Migration {
 #[derive(DeriveIden)]
 enum UserData {
     Table,
-    UUID,
-    Login,
-    Nickname,
-    Password,
-    Email,
-    DiscordId,
-    GoogleId,
-    LastLoginChange,
-    UpdatedAt,
-    CreatedAt,
     WarnSuspiciousRefresh,
     AllowSuspiciousRefresh
 }

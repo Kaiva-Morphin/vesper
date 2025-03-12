@@ -43,7 +43,3 @@ public.pem
 # already existing elements were commented out
 
 #/target
-
-/.vscode
-/.vscode/*
-tasks.json

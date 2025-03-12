@@ -3,7 +3,18 @@ members = [
     "libs/shared",
     "libs/postgre/migrations",
     "libs/postgre/entities",
-    "services/auth", "libs/redis-keys", "services/email", "libs/message_broker", "libs/postgre/db", "services/user", "services/groups", "services/calls", "services/posts",
+    "libs/redis_utils",
+    "libs/message_broker",
+    "libs/postgre/db",
+    "services/auth",
+    "services/email",
+    "services/user",
+    "services/groups",
+    "services/calls",
+    "services/posts",
+    "services/service_father",
+    "services/filesender",
+    "services/root_panel",
     # "services/old-auth",
 ]
 resolver = "2"
@@ -38,5 +49,5 @@ async-nats = "0.39.0"
 shared = {path = "libs/shared"}
 postgre_migrations = {path = "libs/postgre/migrations"}
 postgre_entities = {path = "libs/postgre/entities"}
-
+redis_utils = {path = "libs/redis_utils"}
 

@@ -28,7 +28,6 @@ pub async fn login(
     let ip = get_user_ip(&headers);
     let ua = get_user_agent(&headers);
     state.send_new_login(&email, ip.clone(), ua.clone()).await?; //TODO!: ADD TRUSTED USER DEVICES 
-
     let jar = generate_and_put_refresh(jar, &state, &user_id, login_body.fingerprint, ua, ip, email, settings)?;
     let access_response = generate_access(user_id)?;
     Ok((jar, access_response).into_response())

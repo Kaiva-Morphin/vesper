@@ -1,4 +1,4 @@
-use axum::response::IntoResponse;
+use axum::{body::Body, response::{IntoResponse, Response}};
 use reqwest::StatusCode;
 use tracing::error;
 
@@ -25,5 +25,19 @@ where
 {
     fn from(err: E) -> Self {
         Self(err.into())
+    }
+}
+
+pub trait ToResponseBody<T> {
+    fn trough_app_err(self) -> Result<T, Response<Body>>;
+}
+
+impl<T> ToResponseBody<T> for anyhow::Result<T, anyhow::Error> 
+{
+    fn trough_app_err(self) -> Result<T, Response<Body>> {
+        match self {
+            Ok(v) => Ok(v),
+            Err(e) => Err(AppErr(e).into_response())
+        }
     }
 }

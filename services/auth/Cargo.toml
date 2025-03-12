@@ -25,6 +25,7 @@ lazy_static.workspace = true
 bcrypt.workspace = true
 regex.workspace = true
 cookie.workspace = true
+redis_utils.workspace = true
 sha2 = "0.10.8"
 log = "0.4.26"
 include-bytes-plus.workspace = true

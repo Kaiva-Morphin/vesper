@@ -1,10 +1,9 @@
-use axum::{body::Body, extract::State, http::{HeaderMap, Response, StatusCode}, response::IntoResponse, Json};
+use axum::{body::Body, extract::State, http::{HeaderMap, Response}, Json};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
-use shared::{tokens::jwt::{AccessTokenResponse, RefreshRules, TokenEncoder}, utils::{app_err::AppErr, header::{get_user_agent, get_user_ip}}};
-use tracing::warn;
+use shared::tokens::jwt::RefreshRules;
 
-use crate::{repository::{cookies::TokenCookie, tokens::{generate_access, generate_and_put_refresh}}, AppState};
+use crate::AppState;
 
 use super::refresh::RefreshProcessor;
 
@@ -28,7 +27,7 @@ pub async fn set_refresh_rules(
     }): Json<SetRefreshRules>,
 ) -> Result<Response<Body>, Response<Body>> {
     let new_rules= RefreshRules { warn_suspicious_refresh, allow_suspicious_refresh};
-    Ok(RefreshProcessor::begin(jar, headers, state, fingerprint)?.refresh_rules().await?.update_refresh_rules(new_rules).await?.generate_tokens()?)
+    Ok(RefreshProcessor::begin(jar, &headers, state, fingerprint)?.refresh_rules().await?.update_refresh_rules(new_rules).await?.generate_tokens()?)
 }
 
 

@@ -3,6 +3,7 @@ use tracing::info;
 
 use crate::user_data::ActiveModel;
 
+//TODO: MOVE TO SQL?
 #[async_trait::async_trait]
 impl ActiveModelBehavior for ActiveModel {
     async fn before_save<C>(mut self, db: &C, insert: bool) -> Result<Self, DbErr>

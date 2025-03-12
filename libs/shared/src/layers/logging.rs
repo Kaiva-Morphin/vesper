@@ -29,7 +29,7 @@ macro_rules! make_unique_span {
 }
 
 #[macro_export]
-macro_rules! with_unique_span_layer {
+macro_rules! layer_with_unique_span {
     ($prefix:expr) => {
         async |req: Request<Body>, next: axum::middleware::Next| -> Response {
             $crate::make_unique_span!($prefix, span);

@@ -1,21 +1,17 @@
 
-use crate::{endpoints::login::LoginBody, AppState, CFG, ENV};
+use crate::{AppState, CFG, ENV};
 use message_broker::email::types::ChangedField;
 use message_broker::email::types::Email;
 use message_broker::email::types::EmailKind;
 use rand::distr::Alphanumeric;
 use rand::Rng;
-use sea_orm::{prelude::Uuid, *};
+use redis_utils::redis_tokens::Commands;
+use redis_utils::redis::RedisConn;
 
 use anyhow::Result;
 use sha2::Digest;
 use sha2::Sha256;
-use shared::tokens::jwt::RefreshRules;
-use shared::tokens::redis::Commands;
-use shared::tokens::redis::RedisConn;
-use shared::uuid;
 use tracing::info;
-use tracing::warn;
 
 #[derive(Clone)]
 pub struct EmailCode {
@@ -120,7 +116,7 @@ trait RedisEmailCode {
 
 impl RedisEmailCode for RedisConn {
     fn set_code(&self, email_code: EmailCode) -> Result<()> {
-        if let CodeKind::PasswordRecovery = email_code.kind {return self.set_recovery_code(email_code)}
+        if let CodeKind::PasswordRecovery = email_code.kind {return self.set_recovery_code(email_code)} // that also feels weird
         let mut conn = self.pool.get()?;
         let (key, value) = email_code.key_value();
         let _ : () = conn.set_ex(key, value, email_code.kind.to_lifetime())?;
@@ -168,82 +164,53 @@ impl AppState {
     pub async fn try_send_recovery_code(&self, email_or_login: &String) -> Result<()> {
         let Some(email) = self.get_email_from_login_cred(email_or_login).await? else {return Ok(())};
         let raw = generate_reset_token();
-        info!("Generated recovery code");
-        let code = EmailCode::recovery(email.clone(), raw);
-        info!("Recovery code sent to nats!");
-        let encoded =  bincode::encode_to_vec(&code.clone().to_email(), bincode::config::standard())?;
-        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
-            .await?
-            .await?;
+        info!("Generated recovery code {}", raw);
+        let email_code = EmailCode::recovery(email.clone(), raw);
+        self.send_email(email_code.clone().to_email()).await?;
         info!("Recovery code in redis!");
-        self.redis.set_code(code)?;
+        self.redis_tokens.set_code(email_code)?;
         Ok(())
     }
 
     pub async fn send_changed_notification(&self, email: &String, field: ChangedField) -> Result<()> {
         let email = Email::changed(email.clone(), field);
-        let encoded =  bincode::encode_to_vec(&email, bincode::config::standard())?;
-        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
-            .await?
-            .await?;
-        info!("Changed notification sent to nats!");
+        self.send_email(email).await?;
         Ok(())
     }
 
     pub async fn send_register_code(&self, email: &String) -> Result<()> {
-        let email = EmailCode::register(email.clone());
-        info!("Generated code: {}", email.code);
-        let encoded =  bincode::encode_to_vec(&email.clone().to_email(), bincode::config::standard())?;
-        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
-            .await?
-            .await?;
-        info!("Register code sent to nats!");
-        self.redis.set_code(email)?;
+        let email_code = EmailCode::register(email.clone());
+        info!("Generated code: {}", email_code.code);
+        self.send_email(email_code.clone().to_email()).await?;
+        self.redis_tokens.set_code(email_code)?;
         info!("Register code in redis!");
         Ok(())
     }
 
     pub async fn send_new_login(&self, email: &String, ip : String, user_agent : String) -> Result<()> {
-        info!("Sending new login to {}", email);
         let email = Email{
             to: email.clone(),
             kind: EmailKind::NewLogin { ip, user_agent }
         };
-        let encoded =  bincode::encode_to_vec(&email, bincode::config::standard())?;
-        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
-            .await?
-            .await?;
-        info!("Sended to nats!");
+        self.send_email(email).await?;
         Ok(())
     }
 
     pub async fn send_suspicious_refresh(&self, email: &String, ip : String, user_agent : String) -> Result<()> {
-        info!("Sending suspicious refresh to {}", email);
         let email = Email{
             to: email.clone(),
             kind: EmailKind::SuspiciousRefresh { ip, user_agent }
         };
-        let encoded =  bincode::encode_to_vec(&email, bincode::config::standard())?;
-        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
-            .await?
-            .await?;
-        info!("Sended to nats!");
+        self.send_email(email).await?;
         Ok(())
     }
 
-    
-
     pub async fn send_refresh_rules_update(&self, email: &String, ip : String, user_agent : String) -> Result<()> {
-        info!("Sending rule update to {}", email);
         let email = Email{
             to: email.clone(),
             kind: EmailKind::RefreshRulesUpdate { ip, user_agent }
         };
-        let encoded =  bincode::encode_to_vec(&email, bincode::config::standard())?;
-        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
-            .await?
-            .await?;
-        info!("Sended to nats!");
+        self.send_email(email).await?;
         Ok(())
     }
 
@@ -253,14 +220,24 @@ impl AppState {
             code,
             email
         };
-        Ok(self.redis.verify_code(email_code)?)
+        Ok(self.redis_tokens.verify_code(email_code)?)
     }
     pub async fn recovery_password(&self, code: &String, new_password: String) -> Result<Option<()>> {
-        if let Some(email) = self.redis.pop_recovery_email(code)? {
+        if let Some(email) = self.redis_tokens.pop_recovery_email(code)? {
             self.set_password(&email, new_password).await?;
             self.send_changed_notification(&email, ChangedField::Password).await?;
             return Ok(Some(()));
         };
         Ok(None)
+    }
+
+    pub async fn send_email(&self, email: Email) -> Result<()> {
+        info!("Sending \"{}\" to {}", email.kind.name(), email.to);
+        let encoded =  bincode::encode_to_vec(&email, bincode::config::standard())?;
+        self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
+            .await?
+            .await?;
+        info!("Sent to the NATS!");
+        Ok(())
     }
 }

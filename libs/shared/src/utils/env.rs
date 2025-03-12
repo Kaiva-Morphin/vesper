@@ -58,7 +58,7 @@ macro_rules! env_config {
     ($($filename:expr => $glob:ident = $struct:ident {$($field:ident : $type:ty $(= $op_val:expr)? ),* $(,)?})*) => {
         $(
             #[allow(non_snake_case)]
-            pub struct $struct {
+            pub struct $struct { // maybe pub(crate)?
                 $(pub $field: $type),*
             }
             impl $struct {

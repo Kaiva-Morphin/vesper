@@ -16,6 +16,7 @@ use include_bytes_plus::include_bytes;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AccessTokenPayload {
     pub user: Uuid,
+    pub groups: String,
     pub exp: i64
 }
 

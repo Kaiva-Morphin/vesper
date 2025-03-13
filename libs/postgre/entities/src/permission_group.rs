@@ -3,32 +3,33 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "user_group")]
+#[sea_orm(table_name = "permission_group")]
 pub struct Model {
+    pub value: bool,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub user_id: Uuid,
+    pub permission: i32,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub group_id: i32,
+    pub group: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
         belongs_to = "super::group::Entity",
-        from = "Column::GroupId",
+        from = "Column::Group",
         to = "super::group::Column::Id",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
     Group,
     #[sea_orm(
-        belongs_to = "super::user_data::Entity",
-        from = "Column::UserId",
-        to = "super::user_data::Column::Uuid",
+        belongs_to = "super::permission::Entity",
+        from = "Column::Permission",
+        to = "super::permission::Column::Id",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    UserData,
+    Permission,
 }
 
 impl Related<super::group::Entity> for Entity {
@@ -37,9 +38,9 @@ impl Related<super::group::Entity> for Entity {
     }
 }
 
-impl Related<super::user_data::Entity> for Entity {
+impl Related<super::permission::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::UserData.def()
+        Relation::Permission.def()
     }
 }
 

@@ -9,7 +9,7 @@ members = [
     "services/auth",
     "services/email",
     "services/user",
-    "services/groups",
+    "services/perms",
     "services/calls",
     "services/posts",
     "services/service_father",
@@ -34,7 +34,7 @@ anyhow = "1.0.97"
 serde = {version = "1.0.218", features = ["derive"]}
 axum-extra = { version = "0.10.0", features = ["cookie"] }
 axum = { version = "0.8.1", features = ["macros"] }
-uuid = { version = "1.15.1", features = ["serde","v4"] }
+uuid = { version = "1.15.1", features = ["serde", "v4"] }
 rand = "0.9.0"
 bcrypt = "0.17.0"   
 regex = "1.11.1"
@@ -50,4 +50,5 @@ shared = {path = "libs/shared"}
 postgre_migrations = {path = "libs/postgre/migrations"}
 postgre_entities = {path = "libs/postgre/entities"}
 redis_utils = {path = "libs/redis_utils"}
+message_broker = {path = "libs/message_broker" }
 

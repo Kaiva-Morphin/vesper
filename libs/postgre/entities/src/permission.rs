@@ -3,25 +3,20 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "group")]
+#[sea_orm(table_name = "permission")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub weight: i32,
-    pub name: Option<String>,
-    pub color: Option<String>,
-    pub visible_only_in: bool,
-    pub visible_in_search: bool,
-    pub visible_in_profile: bool,
-    pub pin_link: Option<String>,
+    #[sea_orm(unique)]
+    pub name: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(has_many = "super::permission_group::Entity")]
     PermissionGroup,
-    #[sea_orm(has_many = "super::user_group::Entity")]
-    UserGroup,
+    #[sea_orm(has_many = "super::permission_user::Entity")]
+    PermissionUser,
 }
 
 impl Related<super::permission_group::Entity> for Entity {
@@ -30,27 +25,27 @@ impl Related<super::permission_group::Entity> for Entity {
     }
 }
 
-impl Related<super::user_group::Entity> for Entity {
+impl Related<super::permission_user::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::UserGroup.def()
+        Relation::PermissionUser.def()
     }
 }
 
-impl Related<super::permission::Entity> for Entity {
+impl Related<super::group::Entity> for Entity {
     fn to() -> RelationDef {
-        super::permission_group::Relation::Permission.def()
+        super::permission_group::Relation::Group.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::permission_group::Relation::Group.def().rev())
+        Some(super::permission_group::Relation::Permission.def().rev())
     }
 }
 
 impl Related<super::user_data::Entity> for Entity {
     fn to() -> RelationDef {
-        super::user_group::Relation::UserData.def()
+        super::permission_user::Relation::UserData.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::user_group::Relation::Group.def().rev())
+        Some(super::permission_user::Relation::Permission.def().rev())
     }
 }
 

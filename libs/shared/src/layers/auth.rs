@@ -8,6 +8,7 @@ use tower::{Layer, Service};
 
 use crate::tokens::jwt::{AccessTokenPayload, TokenEncoder};
 
+#[derive(Clone)]
 pub struct AuthAccessLayer {}
 
 impl<S> Layer<S> for AuthAccessLayer {
@@ -18,13 +19,23 @@ impl<S> Layer<S> for AuthAccessLayer {
             service: inner
         }
     }
-
-
 }
 
 pub struct AuthAccessService<S> {
     service: S,
 }
+
+impl<S> Clone for AuthAccessService<S>
+where
+    S: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            service: self.service.clone(),
+        }
+    }
+}
+
 
 impl<S, ReqBody> Service<Request<ReqBody>> for AuthAccessService<S>
 where
@@ -48,9 +59,9 @@ where
             .map(|token| token.to_string());
         
         let token : Option<AccessTokenPayload> = if let Some(header_value) = auth_header {
-            if let Some(token) = header_value.strip_prefix("Bearer ") {
-                TokenEncoder::decode_access(token.to_string())
-            } else {None}
+            // if let Some(token) = header_value.strip_prefix("Bearer ") {
+                TokenEncoder::decode_access(header_value.to_string())
+            // } else {None}
         } else {None};
 
         
@@ -68,3 +79,5 @@ where
         }
     }
 }
+
+

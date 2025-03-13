@@ -31,7 +31,7 @@ macro_rules! make_unique_span {
 #[macro_export]
 macro_rules! layer_with_unique_span {
     ($prefix:expr) => {
-        async |req: Request<Body>, next: axum::middleware::Next| -> Response {
+        async |req: axum::extract::Request<axum::body::Body>, next: axum::middleware::Next| -> axum::response::Response {
             $crate::make_unique_span!($prefix, span);
             let response = $crate::tracing::Instrument::instrument(next.run(req), span).await;
             response

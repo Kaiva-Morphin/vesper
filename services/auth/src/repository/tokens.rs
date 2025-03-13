@@ -1,7 +1,8 @@
 use axum_extra::extract::CookieJar;
+use base64::{prelude::BASE64_URL_SAFE_NO_PAD, Engine};
 use sea_orm::{prelude::Uuid, sqlx::types::chrono::Utc};
 use sha2::Digest;
-use shared::tokens::jwt::{AccessTokenPayload, AccessTokenResponse, RefreshRules, RefreshTokenPayload, RefreshTokenRecord, TokenEncoder};
+use shared::{tokens::jwt::{AccessTokenPayload, AccessTokenResponse, RefreshRules, RefreshTokenPayload, RefreshTokenRecord, TokenEncoder}, utils::set_encoder::encode_set};
 
 use anyhow::Result;
 use tracing::info;
@@ -17,6 +18,7 @@ pub fn generate_access(user_id: Uuid) ->  Result<AccessTokenResponse> { // todo:
     let exp = Utc::now().timestamp() + CFG.ACCESS_TOKEN_LIFETIME as i64;
     let access_payload = AccessTokenPayload {
         user: user_id,
+        groups: BASE64_URL_SAFE_NO_PAD.encode(encode_set(&mut (1..=10000).collect())), // TODO!: REAL GROUPS
         exp
     };
     let access_token = TokenEncoder::encode_access(access_payload)?;

@@ -67,7 +67,7 @@ async fn main() -> Result<()>{
         }))
         .layer(TimeoutLayer::new(Duration::from_secs(25)));
 
-    let tracing_layer = ServiceBuilder::new()
+    let default_layer = ServiceBuilder::new()
         .layer(axum::middleware::from_fn(shared::layer_with_unique_span!("request ")))
         .layer(axum::middleware::from_fn(shared::layers::logging::logging_middleware))
         .layer(CatchPanicLayer::new())
@@ -87,7 +87,7 @@ async fn main() -> Result<()>{
         .route("/recovery_password", post(recovery_password))
         .route("/request_password_recovery", post(request_password_recovery))
         .with_state(state)
-        .layer(tracing_layer);
+        .layer(default_layer);
         
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", ENV.SERVICE_AUTH_PORT)).await?;
 

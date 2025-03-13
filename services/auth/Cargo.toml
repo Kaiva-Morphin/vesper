@@ -29,9 +29,10 @@ redis_utils.workspace = true
 sha2 = "0.10.8"
 log = "0.4.26"
 include-bytes-plus.workspace = true
-email = { version = "0.1.0", path = "../email" }
+# email.workspace = true
 db = { version = "0.1.0", path = "../../libs/postgre/db" }
 async-nats.workspace = true
-message_broker = { version = "0.1.0", path = "../../libs/message_broker" }
+message_broker.workspace = true
 bincode = { version = "2.0.0", features = ["serde"] }
 rand.workspace = true
+base64 = "0.22.1"

@@ -236,7 +236,8 @@ impl AppState {
         let encoded =  bincode::encode_to_vec(&email, bincode::config::standard())?;
         self.publisher.publish(ENV.EMAIL_SEND_NATS_EVENT.clone(), encoded.into())
             .await?
-            .await?;
+            //.await? // todo: checks that msg can be read
+            ;
         info!("Sent to the NATS!");
         Ok(())
     }

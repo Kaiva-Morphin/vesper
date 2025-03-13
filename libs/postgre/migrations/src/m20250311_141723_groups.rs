@@ -20,6 +20,7 @@ impl MigrationTrait for Migration {
                         .primary_key()
                         .unique_key()
                     )
+                    .col(integer(Group::Weight).not_null())
                     .col(string_null(Group::Name))
                     .col(string_len_null(Group::Color, 7))
                     .col(boolean(Group::VisibleOnlyIn).not_null().default(false))
@@ -79,6 +80,7 @@ pub enum Group {
     VisibleInSearch,
     VisibleInProfile,
     PinLink,
+    Weight,
 }
 
 #[derive(Iden)]

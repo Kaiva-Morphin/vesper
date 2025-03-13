@@ -31,132 +31,68 @@ impl MigrationTrait for Migration {
         manager
             .create_table(
                 Table::create()
-                    .table(AllowPermissionGroup::Table)
+                    .table(PermissionGroup::Table)
                     .if_not_exists()
+                    .col(boolean(PermissionGroup::Value).not_null())
                     .col(
-                        integer(AllowPermissionGroup::Permission)
+                        integer(PermissionGroup::Permission)
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-allow-pg-per")
-                            .from(AllowPermissionGroup::Table, AllowPermissionGroup::Permission)
+                            .name("fk-pg-per")
+                            .from(PermissionGroup::Table, PermissionGroup::Permission)
                             .to(Permission::Table, Permission::Id)
                             .on_delete(ForeignKeyAction::Cascade)
-
                     )
                     .col(
-                        integer(AllowPermissionGroup::Group)
+                        integer(PermissionGroup::Group)
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-allow-pg-grp")
-                            .from(AllowPermissionGroup::Table, AllowPermissionGroup::Group)
+                            .name("fk-pg-grp")
+                            .from(PermissionGroup::Table, PermissionGroup::Group)
                             .to(Group::Table, Group::Id)
                             .on_delete(ForeignKeyAction::Cascade)
 
                     )
                     .primary_key(
                         Index::create()
-                            .col(AllowPermissionGroup::Permission)
-                            .col(AllowPermissionGroup::Group)
+                            .col(PermissionGroup::Permission)
+                            .col(PermissionGroup::Group)
                     )
                     .to_owned(),
             )
             .await?;
-        manager
-            .create_table(
-                Table::create()
-                    .table(DenyPermissionGroup::Table)
-                    .if_not_exists()
-                    .col(
-                        integer(DenyPermissionGroup::Permission)
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-deny-pg-per")
-                            .from(DenyPermissionGroup::Table, DenyPermissionGroup::Permission)
-                            .to(Permission::Table, Permission::Id)
-                            .on_delete(ForeignKeyAction::Cascade)
-                    )
-                    .col(
-                        integer(DenyPermissionGroup::Group)
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-deny-pg-grp")
-                            .from(DenyPermissionGroup::Table, DenyPermissionGroup::Group)
-                            .to(Group::Table, Group::Id)
-                            .on_delete(ForeignKeyAction::Cascade)
-                    )
-                    .primary_key(
-                        Index::create()
-                            .col(DenyPermissionGroup::Permission)
-                            .col(DenyPermissionGroup::Group)
-                    )
-                    .to_owned(),
-            )
-            .await?;
-        manager
-            .create_table(
-                Table::create()
-                    .table(AllowPermissionUser::Table)
-                    .if_not_exists()
-                    .col(
-                        integer(AllowPermissionUser::Permission)
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-allow-pu-per")
-                            .from(AllowPermissionUser::Table, AllowPermissionUser::Permission)
-                            .to(Permission::Table, Permission::Id)
-                            .on_delete(ForeignKeyAction::Cascade)
-                    )
-                    .col(
-                        uuid(AllowPermissionUser::User)
-                    )
-                    .foreign_key(
-                        ForeignKey::create()
-                            .name("fk-allow-pu-usr")
-                            .from(AllowPermissionUser::Table, AllowPermissionUser::User)
-                            .to(UserData::Table, UserData::UUID)
-                            .on_delete(ForeignKeyAction::Cascade)
-                    )
-                    .primary_key(
-                        Index::create()
-                            .col(AllowPermissionUser::Permission)
-                            .col(AllowPermissionUser::User)
-                    )
-                    .to_owned(),
-            ).await?;
             manager
             .create_table(
                 Table::create()
-                    .table(DenyPermissionUser::Table)
+                    .table(PermissionUser::Table)
                     .if_not_exists()
+                    .col(boolean(PermissionUser::Value).not_null())
                     .col(
-                        integer(DenyPermissionUser::Permission)
+                        integer(PermissionUser::Permission)
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-deny-pu-per")
-                            .from(DenyPermissionUser::Table, DenyPermissionUser::Permission)
+                            .name("fk-pu-per")
+                            .from(PermissionUser::Table, PermissionUser::Permission)
                             .to(Permission::Table, Permission::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                     )
                     .col(
-                        uuid(DenyPermissionUser::User)
+                        uuid(PermissionUser::User)
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .name("fk-deny-pu-usr")
-                            .from(DenyPermissionUser::Table, DenyPermissionUser::User)
+                            .name("fk-pu-usr")
+                            .from(PermissionUser::Table, PermissionUser::User)
                             .to(UserData::Table, UserData::UUID)
                             .on_delete(ForeignKeyAction::Cascade)
                     )
                     .primary_key(
                         Index::create()
-                            .col(DenyPermissionUser::Permission)
-                            .col(DenyPermissionUser::User)
+                            .col(PermissionUser::Permission)
+                            .col(PermissionUser::User)
                     )
                     .to_owned(),
             ).await
@@ -167,16 +103,10 @@ impl MigrationTrait for Migration {
             .drop_table(Table::drop().table(Permission::Table).to_owned())
             .await?;
         manager
-            .drop_table(Table::drop().table(AllowPermissionGroup::Table).to_owned())
+            .drop_table(Table::drop().table(PermissionGroup::Table).to_owned())
             .await?;
         manager
-            .drop_table(Table::drop().table(DenyPermissionGroup::Table).to_owned())
-            .await?;
-        manager
-            .drop_table(Table::drop().table(AllowPermissionUser::Table).to_owned())
-            .await?;
-        manager
-            .drop_table(Table::drop().table(DenyPermissionUser::Table).to_owned())
+            .drop_table(Table::drop().table(PermissionUser::Table).to_owned())
             .await
     }
 }
@@ -185,33 +115,21 @@ impl MigrationTrait for Migration {
 enum Permission {
     Table,
     Id,
-    Name,
+    Name
 }
 
 #[derive(DeriveIden)]
-enum AllowPermissionGroup {
+enum PermissionGroup {
     Table,
     Permission,
     Group,
+    Value
 }
 
 #[derive(DeriveIden)]
-enum DenyPermissionGroup {
-    Table,
-    Permission,
-    Group,
-}
-
-#[derive(DeriveIden)]
-enum AllowPermissionUser {
+enum PermissionUser {
     Table,
     Permission,
     User,
-}
-
-#[derive(DeriveIden)]
-enum DenyPermissionUser {
-    Table,
-    Permission,
-    User,
+    Value
 }

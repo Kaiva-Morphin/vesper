@@ -105,6 +105,25 @@
 			"label": "vesper: run email"
 		},
 		{
+			"type": "cargo",
+			"command": "run",
+            "args": [
+                "-p",
+                "perms"
+            ],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: run perms"
+		},
+		{
 			"type": "process",
             "command": "powershell",
 			"args": [

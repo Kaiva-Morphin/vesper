@@ -2,12 +2,11 @@ use std::collections::HashMap;
 
 use axum::{extract::{Query, State}, http::{HeaderMap, StatusCode}, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
-use shared::utils::app_err::AppErr;
+use shared::utils::{app_err::AppErr, validation::RegisterValidations};
 use tracing::{info, warn};
 
 use crate::{repository::email::CodeKind, AppState, CFG};
 
-use super::register::RegisterValidations;
 
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,7 +37,6 @@ pub struct UpdateRequest {
 pub async fn recovery_password(
     State(state): State<AppState>,
     Query(params): Query<HashMap<String, String>>,
-    headers: HeaderMap,
     Json(request_body): Json<UpdateRequest>,
 ) -> Result<impl IntoResponse, AppErr> {
     #[cfg(not(feature = "disable_turnstile"))]

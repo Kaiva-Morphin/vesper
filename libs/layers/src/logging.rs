@@ -1,15 +1,43 @@
+use std::fmt::Display;
+
 use axum::{
     body::Body,
-    http::Request,
+    http::{HeaderMap, Request},
     middleware::Next,
     response::Response,
 };
-use tracing::{info, info_span, Instrument, Span};
+use shared::utils::{hash::hash_fingerprint, header::{get_user_agent, get_user_fingerprint, get_user_ip}};
+use tracing::{info, Instrument, Span};
 
-pub async fn logging_middleware(req: Request<Body>, next: Next) -> Response {
+#[derive(Clone)]
+pub struct UserInfoExt {
+    pub ip: String,
+    pub fingerprint: String,
+    pub user_agent: String
+}
+
+impl UserInfoExt {
+    fn from_headers(headers: &HeaderMap) -> Self {
+        Self {
+            ip: get_user_ip(headers),
+            fingerprint: get_user_fingerprint(headers),
+            user_agent: get_user_agent(headers),
+        }
+    }
+}
+
+impl Display for UserInfoExt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}; {}; {}", self.ip, self.user_agent, hash_fingerprint(&self.fingerprint))
+    }
+}
+
+
+pub async fn logging_middleware(mut req: Request<Body>, next: Next) -> Response {
     let span = Span::current();
-    let ip = (|| Some(req.headers().get("X-Forwarded-For")?.to_str().ok()?))().unwrap_or("undefined");
-    info!("Received request from {} on: {:?}", ip, req.uri());
+    let user_info = UserInfoExt::from_headers(req.headers());
+    info!("Received request on: {}. {}", req.uri().to_string(), user_info);
+    req.extensions_mut().insert(user_info);
     let response = next.run(req).instrument(span).await;
     info!("Response status: {:?}", response.status());
     response
@@ -37,7 +65,6 @@ macro_rules! layer_with_unique_span {
             response
         }
     };
-
     () => {
         async |req: Request<Body>, next: Next| -> Response {
             let id : uuid::Uuid = uuid::Uuid::new_v4();

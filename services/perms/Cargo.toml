@@ -18,3 +18,5 @@ tower-http.workspace = true
 redis_utils.workspace = true
 db = { version = "0.1.0", path = "../../libs/postgre/db" }
 base64 = "0.22.1"
+service = { version = "0.1.0", path = "../../libs/service" }
+layers = { version = "0.1.0", path = "../../libs/layers" }

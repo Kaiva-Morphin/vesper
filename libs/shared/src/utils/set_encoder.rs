@@ -1,3 +1,4 @@
+use base64::{prelude::BASE64_URL_SAFE_NO_PAD, Engine};
 use num_bigint::BigUint;
 use num_traits::Zero;
 
@@ -86,7 +87,7 @@ fn combination_decode(pack: &BigUint, num: usize, max: u32) -> Vec<u32> {
 }
 
 ///! SET MUST BE WITHOUT DUPLICATES
-pub fn encode_set(set: &mut Vec<u32>) ->Vec<u8> {
+pub fn encode_set(set: &mut Vec<u32>) -> Vec<u8> {
     let len = set.len();
     if len == 0 {return vec![]}
     set.sort();
@@ -105,6 +106,13 @@ pub fn decode_set(bytes: Vec<u8>) -> Vec<u32> {
     let max = u32::from_le_bytes(bytes[bytes.len()-4..].try_into().unwrap());
     let encoded_data = &bytes[..bytes.len()-8];
     combination_decode(&BigUint::from_bytes_le(encoded_data),len as usize, max)
+}
+
+pub fn encode_set_to_string(set: &mut Vec<u32>) -> String {
+    BASE64_URL_SAFE_NO_PAD.encode(encode_set(set))
+}
+pub fn decode_set_from_string(data: &String) -> Option<Vec<u32>> {
+    Some(decode_set(BASE64_URL_SAFE_NO_PAD.decode(data).ok()?))
 }
 
 #[cfg(test)]

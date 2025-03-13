@@ -14,7 +14,7 @@ members = [
     "services/posts",
     "services/service_father",
     "services/filesender",
-    "services/root_panel",
+    "services/root_panel", "libs/service", "libs/layers",
     # "services/old-auth",
 ]
 resolver = "2"

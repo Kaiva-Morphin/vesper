@@ -9,7 +9,7 @@ pub use redis::Commands;
 use shared::tokens::jwt::RefreshTokenRecord;
 use anyhow::Result;
 
-use crate::{redis::RedisConn, CFG, ENV};
+use crate::{redis::{RedisConn, RedisTokens}, CFG, ENV};
 
 
 
@@ -28,12 +28,12 @@ fn user_to_key(user: Uuid) -> String{
 
 
 
-impl RedisConn {
+impl RedisTokens {
     pub fn for_tokens() -> Self {
         let redis_client = redis::Client::open(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, ENV.REDIS_TOKEN_DB)).expect("Can't connect to redis!");
         RedisConn{
             pool: r2d2::Pool::builder().build(redis_client).expect("Can't create pool for redis!")
-        }
+        }.into()
     }
     
     pub fn set_refresh(&self, record: RefreshTokenRecord) -> Result<()>

@@ -36,3 +36,5 @@ message_broker.workspace = true
 bincode = { version = "2.0.0", features = ["serde"] }
 rand.workspace = true
 base64 = "0.22.1"
+service = { version = "0.1.0", path = "../../libs/service" }
+layers = { version = "0.1.0", path = "../../libs/layers" }

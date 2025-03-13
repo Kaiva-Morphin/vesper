@@ -1,6 +1,5 @@
 pub mod tokens;
 pub mod utils;
-pub mod layers;
 pub use once_cell;
 pub use dotenvy;
 pub use uuid;
@@ -27,5 +26,11 @@ env_config!(
     ".cfg" => CFG = EnvCfg{
         REDIS_REFRESH_TOKEN_LIFETIME : u64 = 30 * 24 * 60 * 60, // 30 days
         REDIS_MAX_LIVE_SESSIONS : usize = 5,
+        MIN_LOGIN_LENGTH : usize,
+        MAX_LOGIN_LENGTH : usize,
+        MIN_PASSWORD_LENGTH : usize,
+        MAX_PASSWORD_LENGTH : usize,
+        MIN_NICKNAME_LENGTH : usize,
+        MAX_NICKNAME_LENGTH : usize,
     }
 );

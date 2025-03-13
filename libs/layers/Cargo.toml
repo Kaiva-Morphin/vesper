@@ -1,0 +1,18 @@
+[package]
+name = "layers"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+axum-extra.workspace = true
+once_cell = "1.21.0"
+postgre_entities.workspace = true
+redis_utils.workspace = true
+regex.workspace = true
+sea-orm.workspace = true
+shared.workspace = true
+tower.workspace = true
+tracing.workspace = true
+uuid = { workspace = true, features = ["v4"] }

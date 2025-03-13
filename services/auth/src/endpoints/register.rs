@@ -1,49 +1,14 @@
-use axum::{extract::State, http::{HeaderMap, StatusCode}, response::IntoResponse, Json};
+use axum::{extract::State, http::{HeaderMap, StatusCode}, response::IntoResponse, Extension, Json};
 use axum_extra::extract::CookieJar;
+use layers::logging::UserInfoExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use shared::utils::{app_err::AppErr, header::{get_user_agent, get_user_ip}, verify_turnstile::verify_turnstile};
+use shared::utils::{app_err::AppErr, header::{get_user_agent, get_user_ip}, validation::{RegisterValidations, COMPILED_EMAIL_REGEX, COMPILED_LOGIN_REGEX, COMPILED_PASSWORD_REGEX}, verify_turnstile::verify_turnstile};
 
 
 use lazy_static::lazy_static;
 
 use crate::{repository::tokens::{generate_access, generate_and_put_refresh}, AppState, CFG};
-
-lazy_static!(
-    pub static ref COMPILED_LOGIN_REGEX : Regex = Regex::new(format!(r"^([a-zA-Z0-9_]){{{},{}}}$", CFG.MIN_LOGIN_LENGTH, CFG.MAX_LOGIN_LENGTH).as_str()).expect("Can't compile login regex!");
-    pub static ref COMPILED_EMAIL_REGEX : Regex = Regex::new(r"^[^\s@]+@[^\s@]+\.[^\s@]+$").expect("Can't compile email regex!");
-    pub static ref COMPILED_PASSWORD_REGEX : Regex = Regex::new(format!(r"^([A-Za-z0-9_\-+=\$#~@*;:<>/\\|!]){{{},{}}}$", CFG.MIN_PASSWORD_LENGTH, CFG.MAX_PASSWORD_LENGTH).as_str()).expect("Can't compile password regex!");
-);
-
-
-
-// todo! Make shared!
-pub trait RegisterValidations {
-    fn is_login_valid(&self) -> bool;
-    fn is_email_valid(&self) -> bool;
-    fn is_password_valid(&self) -> bool;
-    fn is_nickname_valid(&self) -> bool;
-}
-
-impl RegisterValidations for String {
-    fn is_login_valid(&self) -> bool {
-        COMPILED_LOGIN_REGEX.is_match(self)
-    }
-    fn is_email_valid(&self) -> bool {
-        COMPILED_EMAIL_REGEX.is_match(self)
-    }
-    fn is_password_valid(&self) -> bool {
-        COMPILED_PASSWORD_REGEX.is_match(self)
-    }
-    fn is_nickname_valid(&self) -> bool { 
-        let len = self.trim().chars().count();
-        len >= CFG.MIN_NICKNAME_LENGTH && len <= CFG.MAX_NICKNAME_LENGTH
-    }
-}
-
-
-
-
 
 
 #[derive(Serialize, Deserialize)]
@@ -78,7 +43,6 @@ pub struct RegisterBody {
     pub password: String,
     pub email_code: String,
     pub turnstile_response: String,
-    pub fingerprint: String,
     pub tos_accepted: bool
 }
 
@@ -96,7 +60,7 @@ impl RegisterBody {
 pub async fn register(
     State(state): State<AppState>,
     jar: CookieJar,
-    headers: HeaderMap,
+    Extension(user_info) : Extension<UserInfoExt>,
     Json(request_body): Json<RegisterBody>,
 ) -> Result<impl IntoResponse, AppErr> {
     if !request_body.tos_accepted {return Ok((StatusCode::BAD_REQUEST, "Accept ToS!").into_response())}; // hehehe~
@@ -105,13 +69,12 @@ pub async fn register(
     if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::BAD_REQUEST, "Turnstile failed").into_response())};
     #[cfg(not(feature = "disable_email"))]
     if !state.verify_register_code(request_body.email_code.clone(), request_body.email.clone())? {return Ok((StatusCode::BAD_REQUEST, "Invalid email code!").into_response())};
-    let fingerprint = request_body.fingerprint.clone();
     let email = request_body.email.clone();
     let r = state.register_user(request_body).await?;
     let Ok((user_id, rules)) = r else {
         return Ok((StatusCode::CONFLICT, r.err().unwrap()).into_response())
     };
-    let jar = generate_and_put_refresh(jar, &state, &user_id, fingerprint, get_user_agent(&headers), get_user_ip(&headers), email, rules)?;
+    let jar = generate_and_put_refresh(jar, &state, &user_id, user_info, email, rules)?;
     let access_response = generate_access(user_id)?;
     Ok((jar, access_response).into_response())
 }

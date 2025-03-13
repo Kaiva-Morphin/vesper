@@ -6,7 +6,8 @@ use axum::http::{Request, Response, StatusCode};
 use axum::body::Body;
 use tower::{Layer, Service};
 
-use crate::tokens::jwt::{AccessTokenPayload, TokenEncoder};
+use shared::tokens::jwt::{AccessTokenPayload, TokenEncoder};
+use tracing::info;
 
 #[derive(Clone)]
 pub struct AuthAccessLayer {}
@@ -52,26 +53,26 @@ where
     }
 
     fn call(&mut self, mut req: Request<ReqBody>) -> Self::Future {
+        info!("Auth checks...");
         let auth_header = req.headers()
             .get("Authorization")
             .and_then(|h| h.to_str().ok())
             .and_then(|v| v.strip_prefix("Bearer "))
             .map(|token| token.to_string());
-        
         let token : Option<AccessTokenPayload> = if let Some(header_value) = auth_header {
             // if let Some(token) = header_value.strip_prefix("Bearer ") {
                 TokenEncoder::decode_access(header_value.to_string())
             // } else {None}
         } else {None};
-
-        
         if let Some(decoded_token) = token {
+            info!("Auth passed. User: {}", decoded_token.user);
             req.extensions_mut().insert(decoded_token);
             let fut = self.service.call(req);
             Box::pin(async move {
                 fut.await
             })
         } else {
+            info!("Auth failed!");
             Box::pin(async move {Ok(Response::builder()
                     .status(StatusCode::UNAUTHORIZED)
                     .body(Body::from("Unauthorized"))

@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
 
     let state = AppState{
         db: db::open_database_connection().await?,
-        redis_tokens: RedisTokens::for_tokens(),
+        redis_tokens: RedisTokens::build(),
         publisher: Arc::new(build_publisher().await?)
     };
 

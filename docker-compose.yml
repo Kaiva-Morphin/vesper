@@ -8,6 +8,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
+      - ./dbs/init_postgre.sql:/docker-entrypoint-initdb.d/init.sql
       - ./dbs/postgre-data:/var/lib/postgresql/data
   redis:
     env_file:

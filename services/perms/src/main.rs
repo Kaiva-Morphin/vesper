@@ -35,7 +35,7 @@ async fn main() -> Result<()>{
 
     let state = AppState{
         db: db::open_database_connection().await?,
-        redis_perms: RedisPerms::for_perms(),
+        redis_perms: RedisPerms::build(),
     };
 
     let timeout_layer = ServiceBuilder::new()

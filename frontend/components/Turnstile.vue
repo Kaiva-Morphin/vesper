@@ -18,7 +18,7 @@ import { onMounted } from "vue";
 onMounted(() => {
     const script = document.createElement("script");
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback";
-    script.defer = true;
+    // script.defer = true;
     script.z = 10;
     document.head.appendChild(script);
 });

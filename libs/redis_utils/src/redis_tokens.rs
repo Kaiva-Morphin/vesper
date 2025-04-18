@@ -29,7 +29,7 @@ fn user_to_key(user: Uuid) -> String{
 
 
 impl RedisTokens {
-    pub fn for_tokens() -> Self {
+    pub fn build() -> Self {
         let redis_client = redis::Client::open(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, ENV.REDIS_TOKEN_DB)).expect("Can't connect to redis!");
         RedisConn{
             pool: r2d2::Pool::builder().build(redis_client).expect("Can't create pool for redis!")

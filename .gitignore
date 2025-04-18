@@ -30,16 +30,15 @@ logs
 
 *.h1dden*
 
-# db data
-/dbs
+# dbs data
+/dbs/*
+
+# dbs script
+!/dbs/init_postgre.sql
 
 # rs keys
 private.pem
 public.pem
 
 
-# Added by cargo
-#
-# already existing elements were commented out
 
-#/target

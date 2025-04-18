@@ -5,34 +5,36 @@ use redis::Commands;
 
 
 
-
-// PERM::<i32> -> (ZSet(Allowed users/groups), ZSet(Denied users/groups))
-const PERMISSION_SET_PREFIX : &'static str = "PERM_GRP";
-fn perm_to_group_key(perm: i32) -> String {
-    format!("{}::{}", PERMISSION_SET_PREFIX, perm)
-}
-
-
 const PERMISSION_RELATIONSHIP_PREFIX : &'static str = "PERM_REL";
-fn perm_name_to_rel_key(perm_name: &String) -> String {
+fn perm_name_to_rel_key(perm_name: &str) -> String {
     format!("{}::{}", PERMISSION_RELATIONSHIP_PREFIX, perm_name)
 }
 fn perm_id_to_rel_key(perm: &i32) -> String {
     format!("{}::{}", PERMISSION_RELATIONSHIP_PREFIX, perm)
 }
 
+const REGISTERED_DEFAULT_PERM_PREFIX : &'static str = "REG";
+fn reg_default_perm_to_key(perm: &str) -> String {
+    format!("{}::{}", REGISTERED_DEFAULT_PERM_PREFIX, perm)
+}
+
+const GUEST_PERM_PREFIX : &'static str = "GUEST";
+fn guest_perm_to_key(perm: &str) -> String {
+    format!("{}::{}", GUEST_PERM_PREFIX, perm)
+}
+
 impl RedisPerms {
-    pub fn for_perms() -> Self {
+    pub fn build() -> Self {
         let redis_client = redis::Client::open(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, ENV.REDIS_PERMS_DB)).expect("Can't connect to redis!");
         RedisConn{
             pool: r2d2::Pool::builder().build(redis_client).expect("Can't create pool for redis!")
         }.into()
     }
 
+
     pub fn set_rel(&self, name: &String, id: &i32) -> Result<()> {
         let mut conn = self.pool.get()?;
-        let _ : () = conn.set(perm_name_to_rel_key(name), id)?;
-        let _ : () = conn.set(perm_id_to_rel_key(id), name)?;
+        let _ : () = conn.mset(&[(perm_name_to_rel_key(name), &id.to_string()), (perm_id_to_rel_key(id), name)])?;
         Ok(())
     }
 
@@ -51,11 +53,11 @@ impl RedisPerms {
     }
 
     pub fn perm_id_by_name(&self, name: String) -> Result<Option<i32>> {
-
-
-        Ok(None)
+        let k = perm_name_to_rel_key(&name);
+        let mut conn = self.pool.get()?;
+        let id: Option<i32> = conn.get(k)?;
+        Ok(id)
     }
-
 }
 
 /*
@@ -73,8 +75,71 @@ impl RedisPerms {
 
 
 
-impl RedisPerms {
-    pub fn set_group(){}
-    pub fn add_perm_to_group(){}
-    pub fn del_perm_from_group(){}
+// grp -> Zset(perm, weight*2 + !value)
+// grp -> Set(grp) relations.
+
+
+const GROUP_ZSET_PREFIX : &'static str = "GRP_Z";
+fn group_id_to_key(group: &i32) -> String {
+    format!("{}::{}", PERMISSION_RELATIONSHIP_PREFIX, group)
 }
+
+const GROUP_GROUP_RELATIONSHIP_PREFIX : &'static str = "GRP_REL";
+fn grp_grp_rel_to_key(group: &i32) -> String {
+    format!("{}::{}", GROUP_GROUP_RELATIONSHIP_PREFIX, group)
+}
+
+impl RedisPerms {
+    pub fn set_group(
+        &self,  
+        group: &i32,
+        weight: &i32,
+        perms: Vec<(String, bool)>
+    ) -> Result<()> {
+        let mut conn = self.pool.get()?;
+        let k = group_id_to_key(group);
+        
+        // conn.zadd_multiple(key, items)
+        Ok(())
+    }
+    pub fn clear_group(
+        &self,
+        group: &i32,
+    ) -> Result<()> {
+        let mut conn = self.pool.get()?;
+
+        Ok(())
+    }
+    pub fn add_perm_to_group(
+        &self,
+        group: &i32,
+        perm: &String
+    ) -> Result<()> {
+        let mut conn = self.pool.get()?;
+        let k = group_id_to_key(group);
+
+        Ok(())
+    }
+    pub fn del_perm_from_group(
+        &self, 
+        group: &i32,
+        perm: &String
+    ) -> Result<()> {
+        let mut conn = self.pool.get()?;
+        let k = group_id_to_key(group);
+
+        Ok(())
+    }
+
+    pub fn get_group_perms(
+        &self,
+        group: &i32
+    ) -> Result<Vec<String>> {
+        let mut conn = self.pool.get()?;
+        let k = group_id_to_key(group);
+
+        Ok(vec![])
+    }
+}
+
+

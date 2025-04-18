@@ -47,14 +47,13 @@ impl CompletePerm for String {
 }
 
 impl PermissionBundle {
-
     pub async fn new(permission: String, db: &sea_orm::DatabaseConnection, redis: &RedisPerms) -> anyhow::Result<Self> {
         permission.contains("*").then(|| panic!("Can't use wildcard in permission definition"));
         let c = REGEX.captures_iter(&permission)
         .filter_map(|m| m.get(1).map(|v| (format!("{{{}}}", v.as_str()), v.as_str().to_string())))
         .collect::<Vec<(String, String)>>();
         let pattern = 
-        if c.len() == 0 {
+        if c.len() != 0 { PermissionPattern::Pattern { replace: c } } else {
             let perm = postgre_entities::permission::ActiveModel {
                 name: Set(permission.clone()),
                 ..Default::default()
@@ -81,8 +80,6 @@ impl PermissionBundle {
             };
             redis.set_rel(&permission, &id)?;
             PermissionPattern::NoPat { perm_id: id }
-        } else {
-            PermissionPattern::Pattern { replace: c }
         };
         Ok(PermissionBundle{perm: permission, pat: pattern, on_fail: StatusCode::UNAUTHORIZED, db: db.clone(), redis: redis.clone()})
     }
@@ -96,9 +93,8 @@ impl PermissionBundle {
             return Err(self.on_fail)
         };
         info!("Perm check passed!");
-        info!("{}", self.perm);
-        info!("computed: {:?}", self.compute(kvs));
-
+        info!("Perm: {} ~> {:?}", self.perm, self.compute(kvs));
+        
         
         //if let Some() =  self.redis.perm_id_by_name(name)
 

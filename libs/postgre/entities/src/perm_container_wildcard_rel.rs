@@ -3,44 +3,44 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "permission_user")]
+#[sea_orm(table_name = "perm_container_wildcard_rel")]
 pub struct Model {
     pub value: bool,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub permission: i32,
+    pub perm_container_id: i64,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub user: Uuid,
+    pub perm_wildcard_id: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::permission::Entity",
-        from = "Column::Permission",
-        to = "super::permission::Column::Id",
+        belongs_to = "super::perm_container::Entity",
+        from = "Column::PermContainerId",
+        to = "super::perm_container::Column::Id",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    Permission,
+    PermContainer,
     #[sea_orm(
-        belongs_to = "super::user_data::Entity",
-        from = "Column::User",
-        to = "super::user_data::Column::Uuid",
+        belongs_to = "super::perm_wildcard::Entity",
+        from = "Column::PermWildcardId",
+        to = "super::perm_wildcard::Column::PermWildcardId",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    UserData,
+    PermWildcard,
 }
 
-impl Related<super::permission::Entity> for Entity {
+impl Related<super::perm_container::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Permission.def()
+        Relation::PermContainer.def()
     }
 }
 
-impl Related<super::user_data::Entity> for Entity {
+impl Related<super::perm_wildcard::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::UserData.def()
+        Relation::PermWildcard.def()
     }
 }
 

@@ -21,5 +21,5 @@ pub async fn logout_other(
 
     // Json(payload): Json<LogoutBody>,
 ) -> Result<Response<Body>, Response<Body>>  {
-    Ok(RefreshProcessor::begin(jar, state, user_info)?.refresh_rules().await?.rm_all_refresh()?.generate_tokens()?)
+    Ok(RefreshProcessor::begin(jar, state, user_info).await?.refresh_rules().await?.rm_all_refresh().await?.generate_tokens().await?)
 }

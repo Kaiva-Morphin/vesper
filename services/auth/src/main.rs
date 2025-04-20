@@ -19,7 +19,7 @@ mod repository;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db : sea_orm::DatabaseConnection, // arc doesn't need https://github.com/SeaQL/sea-orm/blob/3203a6c7ef4f737ed4ab5ee0491cf3c45d9cd71e/examples/axum_example/api/src/lib.rs#L42-L63
+    pub db : sea_orm::DatabaseConnection, // arc doesn't needed https://github.com/SeaQL/sea-orm/blob/3203a6c7ef4f737ed4ab5ee0491cf3c45d9cd71e/examples/axum_example/api/src/lib.rs#L42-L63
     pub redis_tokens: RedisTokens, // also arc
     pub publisher: Arc<Context>
 }
@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
 
     let state = AppState{
         db: db::open_database_connection().await?,
-        redis_tokens: RedisTokens::build(),
+        redis_tokens: RedisTokens::default().await,
         publisher: Arc::new(build_publisher().await?)
     };
 

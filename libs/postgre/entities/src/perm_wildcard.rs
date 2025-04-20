@@ -3,33 +3,33 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "permission")]
+#[sea_orm(table_name = "perm_wildcard")]
 pub struct Model {
     #[sea_orm(primary_key)]
-    pub perm_id: i64,
+    pub perm_wildcard_id: i64,
     #[sea_orm(unique)]
     pub path: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::perm_container_perm_rel::Entity")]
-    PermContainerPermRel,
+    #[sea_orm(has_many = "super::perm_container_wildcard_rel::Entity")]
+    PermContainerWildcardRel,
 }
 
-impl Related<super::perm_container_perm_rel::Entity> for Entity {
+impl Related<super::perm_container_wildcard_rel::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::PermContainerPermRel.def()
+        Relation::PermContainerWildcardRel.def()
     }
 }
 
 impl Related<super::perm_container::Entity> for Entity {
     fn to() -> RelationDef {
-        super::perm_container_perm_rel::Relation::PermContainer.def()
+        super::perm_container_wildcard_rel::Relation::PermContainer.def()
     }
     fn via() -> Option<RelationDef> {
         Some(
-            super::perm_container_perm_rel::Relation::Permission
+            super::perm_container_wildcard_rel::Relation::PermWildcard
                 .def()
                 .rev(),
         )

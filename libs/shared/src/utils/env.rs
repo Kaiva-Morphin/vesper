@@ -58,7 +58,7 @@ macro_rules! env_config {
     ($($filename:expr => $glob:ident = $struct:ident {$($field:ident : $type:ty $(= $op_val:expr)? ),* $(,)?})*) => {
         $(
             #[allow(non_snake_case)]
-            pub struct $struct { // maybe pub(crate)?
+            pub(crate) struct $struct {
                 $(pub $field: $type),*
             }
             impl $struct {
@@ -74,7 +74,7 @@ macro_rules! env_config {
                 }
             }
 
-            pub static $glob : $crate::once_cell::sync::Lazy<$struct> = $crate::once_cell::sync::Lazy::new(|| {
+            pub(crate) static $glob : $crate::once_cell::sync::Lazy<$struct> = $crate::once_cell::sync::Lazy::new(|| {
                 $crate::dotenvy::from_filename_override($filename).ok(); // only for develop
                 $struct::new()
             });

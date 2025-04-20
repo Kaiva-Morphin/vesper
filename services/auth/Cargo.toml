@@ -38,3 +38,5 @@ rand.workspace = true
 base64 = "0.22.1"
 service = { version = "0.1.0", path = "../../libs/service" }
 layers = { version = "0.1.0", path = "../../libs/layers" }
+bb8 = "0.9.0"
+bb8-redis = "0.21.0"

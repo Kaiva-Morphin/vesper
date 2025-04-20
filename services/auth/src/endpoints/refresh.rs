@@ -21,7 +21,7 @@ pub struct RefreshProcessor {
 }
 
 impl RefreshProcessor {
-    pub fn begin(
+    pub async fn begin(
         mut jar: CookieJar,
         state: AppState,
         user_info: UserInfoExt,
@@ -29,7 +29,7 @@ impl RefreshProcessor {
         let Some(refresh_token_string) = jar.get_refresh() else {return Err((jar.rm_refresh(), StatusCode::UNAUTHORIZED).into_response())};
         jar = jar.rm_refresh();
         let Some(refresh_payload) = TokenEncoder::decode_refresh(refresh_token_string) else {return Err((jar, StatusCode::UNAUTHORIZED).into_response())};
-        let record = state.redis_tokens.pop_refresh(refresh_payload.rtid).trough_app_err()?;
+        let record = state.redis_tokens.pop_refresh(refresh_payload.rtid).await.trough_app_err()?;
         let Some(record) = record else {return Err((jar, StatusCode::INTERNAL_SERVER_ERROR).into_response())};
         let refresh_rules = refresh_payload.rules.clone();
         Ok(RefreshProcessor {
@@ -53,8 +53,8 @@ impl RefreshProcessor {
         Ok(self)
     }
 
-    pub fn rm_all_refresh(self) -> Result<Self, Response<Body>> {
-        self.state.redis_tokens.rm_all_refresh(self.refresh_payload.user.clone()).trough_app_err()?;
+    pub async fn rm_all_refresh(self) -> Result<Self, Response<Body>> {
+        self.state.redis_tokens.rm_all_refresh(self.refresh_payload.user.clone()).await.trough_app_err()?;
         Ok(self)
     }
 
@@ -65,8 +65,8 @@ impl RefreshProcessor {
     }
 
 
-    pub fn generate_tokens(self) -> Result<Response<Body>, Response<Body>> {
-        let jar = generate_and_put_refresh(self.jar, &self.state, &self.record.user, self.user_info, self.record.email, self.refresh_payload.rules).trough_app_err()?;
+    pub async fn generate_tokens(self) -> Result<Response<Body>, Response<Body>> {
+        let jar = generate_and_put_refresh(self.jar, &self.state, &self.record.user, self.user_info, self.record.email, self.refresh_payload.rules).await.trough_app_err()?;
         let access_response = generate_access(self.record.user).trough_app_err()?;
         let v = (StatusCode::OK, jar, access_response).into_response();
         Ok(v)
@@ -78,7 +78,7 @@ pub async fn refresh_tokens(
     jar: CookieJar,
     Extension(user_info) : Extension<UserInfoExt>,
 ) -> Result<Response<Body>, Response<Body>>  {
-    Ok(RefreshProcessor::begin(jar, state, user_info)?.refresh_rules().await?.generate_tokens()?)
+    Ok(RefreshProcessor::begin(jar, state, user_info).await?.refresh_rules().await?.generate_tokens().await?)
 }
 
 

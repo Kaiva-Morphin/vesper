@@ -13,3 +13,5 @@ reqwest.workspace = true
 chrono.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
+bb8 = "0.9.0"
+bb8-redis = "0.21.0"

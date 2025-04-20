@@ -139,6 +139,23 @@
                 "cwd": "${workspaceFolder}/"
             },
 			"label": "vesper: up docker"
+		},
+		{
+			"type": "process",
+            "command": "powershell",
+			"args": [
+				"-Command",
+				"docker compose -f compose.test.yml up"
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: up test docker"
 		}
 	]
 }

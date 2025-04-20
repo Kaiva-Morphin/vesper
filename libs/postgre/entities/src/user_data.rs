@@ -22,43 +22,24 @@ pub struct Model {
     pub created_at: DateTime,
     pub warn_suspicious_refresh: bool,
     pub allow_suspicious_refresh: bool,
+    pub perm_container: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::permission_user::Entity")]
-    PermissionUser,
-    #[sea_orm(has_many = "super::user_group::Entity")]
-    UserGroup,
+    #[sea_orm(
+        belongs_to = "super::perm_container::Entity",
+        from = "Column::PermContainer",
+        to = "super::perm_container::Column::Id",
+        on_update = "NoAction",
+        on_delete = "Cascade"
+    )]
+    PermContainer,
 }
 
-impl Related<super::permission_user::Entity> for Entity {
+impl Related<super::perm_container::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::PermissionUser.def()
-    }
-}
-
-impl Related<super::user_group::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::UserGroup.def()
-    }
-}
-
-impl Related<super::group::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::user_group::Relation::Group.def()
-    }
-    fn via() -> Option<RelationDef> {
-        Some(super::user_group::Relation::UserData.def().rev())
-    }
-}
-
-impl Related<super::permission::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::permission_user::Relation::Permission.def()
-    }
-    fn via() -> Option<RelationDef> {
-        Some(super::permission_user::Relation::UserData.def().rev())
+        Relation::PermContainer.def()
     }
 }
 

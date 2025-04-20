@@ -5,10 +5,10 @@ use message_broker::email::types::Email;
 use message_broker::email::types::EmailKind;
 use rand::distr::Alphanumeric;
 use rand::Rng;
-use redis_utils::redis_tokens::Commands;
-use redis_utils::redis::RedisConn;
+use bb8_redis::{redis::{AsyncCommands, RedisError}, RedisConnectionManager};
 
 use anyhow::Result;
+use redis_utils::redis::RedisConn;
 use sha2::Digest;
 use sha2::Sha256;
 use tracing::info;
@@ -107,53 +107,54 @@ fn generate_reset_token() -> String {
         .collect()
 }
 
+
 trait RedisEmailCode {
-    fn set_code(&self, value: EmailCode) -> Result<()>;
-    fn set_recovery_code(&self, value: EmailCode) -> Result<()>;
-    fn verify_code(&self, value: EmailCode) -> Result<bool>;
-    fn pop_recovery_email(&self, code: &String) -> Result<Option<String>>;
+    async fn set_code(&self, value: EmailCode) -> Result<()>;
+    async fn set_recovery_code(&self, value: EmailCode) -> Result<()>;
+    async fn verify_code(&self, value: EmailCode) -> Result<bool>;
+    async fn pop_recovery_email(&self, code: &String) -> Result<Option<String>>;
 }
 
 impl RedisEmailCode for RedisConn {
-    fn set_code(&self, email_code: EmailCode) -> Result<()> {
-        if let CodeKind::PasswordRecovery = email_code.kind {return self.set_recovery_code(email_code)} // that also feels weird
-        let mut conn = self.pool.get()?;
+    async fn set_code(&self, email_code: EmailCode) -> Result<()> {
+        if let CodeKind::PasswordRecovery = email_code.kind {return self.set_recovery_code(email_code).await} // that also feels weird
+        let mut conn = self.pool.get().await?;
         let (key, value) = email_code.key_value();
-        let _ : () = conn.set_ex(key, value, email_code.kind.to_lifetime())?;
+        let _ : () = conn.set_ex(key, value, email_code.kind.to_lifetime()).await?;
         Ok(())
     }
 
-    fn set_recovery_code(&self, email_code: EmailCode) -> Result<()> {
-        let mut conn = self.pool.get()?;
+    async fn set_recovery_code(&self, email_code: EmailCode) -> Result<()> {
+        let mut conn = self.pool.get().await?;
         let email_key = email_code.email_key();
         let (key, value) = email_code.key_value();
 
         // delete old key to ensure that recovery code is always one per email
-        if let Some(v) = conn.get::<_, Option<String>>(&email_key)? {
-            let _ : () = conn.del(v)?;
+        if let Some(v) = conn.get::<_, Option<String>>(&email_key).await? {
+            let _ : () = conn.del(v).await?;
         }
 
-        let _ : () = conn.set_ex(&key, &value, email_code.kind.to_lifetime())?;
-        let _ : () = conn.set_ex(&email_key, &key, email_code.kind.to_lifetime())?;
+        let _ : () = conn.set_ex(&key, &value, email_code.kind.to_lifetime()).await?;
+        let _ : () = conn.set_ex(&email_key, &key, email_code.kind.to_lifetime()).await?;
         Ok(())
     }
 
-    fn verify_code(&self, email_code: EmailCode) -> Result<bool> {
+    async fn verify_code(&self, email_code: EmailCode) -> Result<bool> {
         let (key , value) = email_code.key_value();
-        let mut conn = self.pool.get()?;
-        let r : Option<String> = conn.get(key)?;
+        let mut conn = self.pool.get().await?;
+        let r : Option<String> = conn.get(key).await?;
         if let Some(record) = r {
             return Ok(record == value)
         }
         Ok(false)
     }
     // code hash -> email
-    fn pop_recovery_email(&self, code: &String) -> Result<Option<String>> {
+    async fn pop_recovery_email(&self, code: &String) -> Result<Option<String>> {
         // bad: let (key , _) = EmailCode{kind: CodeKind::PasswordRecovery,code,email: "".to_owned(),}.key_value();
         let key = EmailCode::recovery_key(code); // much better
-        let mut conn = self.pool.get()?;
-        let r : Option<String> = conn.get(&key)?;
-        let _  : () = conn.del(&key)?;
+        let mut conn = self.pool.get().await?;
+        let r : Option<String> = conn.get(&key).await?;
+        let _  : () = conn.del(&key).await?;
         Ok(r)
     }
 }
@@ -168,7 +169,7 @@ impl AppState {
         let email_code = EmailCode::recovery(email.clone(), raw);
         self.send_email(email_code.clone().to_email()).await?;
         info!("Recovery code in redis!");
-        self.redis_tokens.set_code(email_code)?;
+        self.redis_tokens.set_code(email_code).await?;
         Ok(())
     }
 
@@ -182,7 +183,7 @@ impl AppState {
         let email_code = EmailCode::register(email.clone());
         info!("Generated code: {}", email_code.code);
         self.send_email(email_code.clone().to_email()).await?;
-        self.redis_tokens.set_code(email_code)?;
+        self.redis_tokens.set_code(email_code).await?;
         info!("Register code in redis!");
         Ok(())
     }
@@ -214,16 +215,16 @@ impl AppState {
         Ok(())
     }
 
-    pub fn verify_register_code(&self, code: String, email: String) -> Result<bool> {
+    pub async fn verify_register_code(&self, code: String, email: String) -> Result<bool> {
         let email_code = EmailCode{
             kind: CodeKind::Register,
             code,
             email
         };
-        Ok(self.redis_tokens.verify_code(email_code)?)
+        Ok(self.redis_tokens.verify_code(email_code).await?)
     }
     pub async fn recovery_password(&self, code: &String, new_password: String) -> Result<Option<()>> {
-        if let Some(email) = self.redis_tokens.pop_recovery_email(code)? {
+        if let Some(email) = self.redis_tokens.pop_recovery_email(code).await? {
             self.set_password(&email, new_password).await?;
             self.send_changed_notification(&email, ChangedField::Password).await?;
             return Ok(Some(()));

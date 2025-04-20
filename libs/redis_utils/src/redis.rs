@@ -1,39 +1,60 @@
 use std::ops::{Deref, DerefMut};
 
+use bb8_redis::RedisConnectionManager;
 use redis::Client;
+
+use crate::ENV;
 
 
 
 
 #[derive(Clone)]
 pub struct RedisConn{
-    pub pool: r2d2::Pool<Client>
+    pub pool: bb8::Pool<RedisConnectionManager>
+}
+
+impl RedisConn {
+    pub async fn tokens() -> Self {
+        Self::new(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, ENV.REDIS_TOKEN_DB)).await
+    }
+    pub async fn perms() -> Self {
+        Self::new(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, ENV.REDIS_PERMS_DB)).await
+    }
+    pub async fn db(db: u8) -> Self {
+        Self::new(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, db)).await
+    }
+    pub async fn new(conn_string: String) -> Self {
+        let redis_client = RedisConnectionManager::new(conn_string).expect("Can't connect to redis!");
+        RedisConn{
+            pool: bb8::Pool::builder().build(redis_client).await.expect("Can't create pool for redis!")
+        }
+    }
 }
 
 
-
+#[macro_export]
 macro_rules! redis_wrapper {
     ($name:ident) => {
         #[derive(Clone)]
         pub struct $name {
-            conn: RedisConn
+            conn: $crate::redis::RedisConn
         }
 
-        impl Deref for $name {
-            type Target = RedisConn;
+        impl std::ops::Deref for $name {
+            type Target = $crate::redis::RedisConn;
             fn deref(&self) -> &Self::Target {
                 &self.conn
             }
         }
 
-        impl DerefMut for $name {
+        impl std::ops::DerefMut for $name {
             fn deref_mut(&mut self) -> &mut Self::Target {
                 &mut self.conn
             }
         }
 
-        impl From<RedisConn> for $name {
-            fn from(value: RedisConn) -> Self {
+        impl From<$crate::redis::RedisConn> for $name {
+            fn from(value: $crate::redis::RedisConn) -> Self {
                 Self { conn: value }
             }
         }
@@ -41,4 +62,3 @@ macro_rules! redis_wrapper {
 }
 
 redis_wrapper!(RedisTokens);
-redis_wrapper!(RedisPerms);

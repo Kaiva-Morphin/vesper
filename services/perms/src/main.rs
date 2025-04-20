@@ -2,11 +2,10 @@ use std::time::Duration;
 
 use axum::{error_handling::HandleErrorLayer, http::status::StatusCode, middleware::from_extractor, routing::{delete, get, post, put}, Router};
 use endpoints::*;
-use redis_utils::redis::RedisPerms;
 use sea_orm::DatabaseConnection;
 use shared::env_config;
 use layers::{auth::AuthAccessLayer, layer_with_unique_span};
-use layers::permission::PermissionAccessLayer as PAL;
+use permissions_lib::{middleware::{ExtractPath, PermissionAccessLayer as PAL}, redis::RedisPerms};
 
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
 use tower_http::catch_panic::CatchPanicLayer;
@@ -35,7 +34,7 @@ async fn main() -> Result<()>{
 
     let state = AppState{
         db: db::open_database_connection().await?,
-        redis_perms: RedisPerms::build(),
+        redis_perms: RedisPerms::default().await,
     };
 
     let timeout_layer = ServiceBuilder::new()
@@ -69,7 +68,7 @@ async fn main() -> Result<()>{
         .route("/groups/{id}", delete(groups::delete).layer(PAL::new("vesper.groups.{id}.delete".to_string(), &state.db, &state.redis_perms).await?.hidden()))
         .layer(ServiceBuilder::new()
             .layer(AuthAccessLayer {})
-            .layer(from_extractor::<layers::permission::ExtractPath>()))
+            .layer(from_extractor::<ExtractPath>()))
         .with_state(state)
         .layer(default_layer)
     );

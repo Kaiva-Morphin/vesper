@@ -2,9 +2,10 @@
 
 pub mod prelude;
 
-pub mod group;
+pub mod perm_container;
+pub mod perm_container_container_rel;
+pub mod perm_container_perm_rel;
+pub mod perm_container_wildcard_rel;
+pub mod perm_wildcard;
 pub mod permission;
-pub mod permission_group;
-pub mod permission_user;
 pub mod user_data;
-pub mod user_group;

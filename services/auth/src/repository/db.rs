@@ -4,9 +4,9 @@ use sea_orm::{prelude::Uuid, *};
 
 use anyhow::Result;
 
-use postgre_entities::user_data;
+use postgre_entities::{perm_container, user_data};
 use shared::{default_err, tokens::jwt::RefreshRules};
-use tracing::{info, warn};
+use tracing::{info, warn, error};
 
 use crate::endpoints::register::RegisterBody;
 
@@ -88,6 +88,11 @@ impl AppState {
         let user_uuid = Uuid::new_v4();
         let allow_suspicious_refresh = false;
         let warn_suspicious_refresh = true;
+
+        let container = perm_container::ActiveModel {
+            ..Default::default()
+        };
+
         let user = user_data::ActiveModel {
             uuid: Set(user_uuid.clone()),
             login: Set(register_body.login),
@@ -96,8 +101,10 @@ impl AppState {
             email: Set(register_body.email),
             allow_suspicious_refresh: Set(allow_suspicious_refresh),
             warn_suspicious_refresh: Set(warn_suspicious_refresh),
+            perm_container: container.id,
             ..Default::default()
         };
+
         match user.insert(&self.db).await {
             Ok(_m) => {
                 info!("Successful registration!");
@@ -109,21 +116,22 @@ impl AppState {
                     }
                 )))
             }
-            Err(DbErr::Query(RuntimeErr::SqlxError(sqlx::error::Error::Database(err)))) 
-            if err.message().contains("duplicate key value") => {
-                if err.message().contains("email") {
-                    info!("Conflict on email: Email already exists!");
-                    return Ok(Err("The email is already registered. Please use a different email, or try to log in.".to_string()));
-                } else if err.message().contains("login") {
-                    info!("Conflict on login: User already exists!");
-                    return Ok(Err("The login is already taken. Please choose another, or try to log in.".to_string()));
-                }
-                warn!("Uncatched error! {:#?}", err);
-            }
             Err(err) => {
-                warn!("Uncatched error! {:#?}", err);
+                if let DbErr::Query(RuntimeErr::SqlxError(sqlx::error::Error::Database(err))) = &err {
+                    let msg = err.message();
+                    if msg.contains("duplicate key value") {
+                        if msg.contains("email") {
+                            info!("Conflict on email: Email already exists!");
+                            return Ok(Err("The email is already registered. Please use a different email, or try to log in.".to_string()));
+                        } else if msg.contains("login") {
+                            info!("Conflict on login: User already exists!");
+                            return Ok(Err("The login is already taken. Please choose another, or try to log in.".to_string()));
+                        }
+                    }
+                }
+                error!("Uncatched error! {:#?}", err);
+                Err(anyhow::Error::from(err))
             }
         }
-        default_err!()
     }
 }

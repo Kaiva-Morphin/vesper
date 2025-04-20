@@ -3,43 +3,44 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "user_group")]
+#[sea_orm(table_name = "perm_container_perm_rel")]
 pub struct Model {
+    pub value: bool,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub user_id: Uuid,
+    pub perm_container_id: i64,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub group_id: i32,
+    pub perm_id: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::group::Entity",
-        from = "Column::GroupId",
-        to = "super::group::Column::Id",
+        belongs_to = "super::perm_container::Entity",
+        from = "Column::PermContainerId",
+        to = "super::perm_container::Column::Id",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    Group,
+    PermContainer,
     #[sea_orm(
-        belongs_to = "super::user_data::Entity",
-        from = "Column::UserId",
-        to = "super::user_data::Column::Uuid",
+        belongs_to = "super::permission::Entity",
+        from = "Column::PermId",
+        to = "super::permission::Column::PermId",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    UserData,
+    Permission,
 }
 
-impl Related<super::group::Entity> for Entity {
+impl Related<super::perm_container::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Group.def()
+        Relation::PermContainer.def()
     }
 }
 
-impl Related<super::user_data::Entity> for Entity {
+impl Related<super::permission::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::UserData.def()
+        Relation::Permission.def()
     }
 }
 

@@ -27,7 +27,7 @@ pub async fn login(
     let Some((user_id, settings)) = user_id else {return Ok((StatusCode::UNAUTHORIZED, "Incorrect credentials!").into_response())};
     let Some(email) = state.get_email_from_login_cred(&login_body.email_or_login).await? else {return Ok((StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong!").into_response())};
     state.send_new_login(&email, user_info.ip.clone(), user_info.user_agent.clone()).await?; //TODO!: ADD TRUSTED USER DEVICES 
-    let jar = generate_and_put_refresh(jar, &state, &user_id, user_info, email, settings)?;
+    let jar = generate_and_put_refresh(jar, &state, &user_id, user_info, email, settings).await?;
     let access_response = generate_access(user_id)?;
     Ok((jar, access_response).into_response())
 }

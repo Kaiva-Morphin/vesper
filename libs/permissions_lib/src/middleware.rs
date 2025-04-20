@@ -1,6 +1,5 @@
 use axum::{body::Body, extract::{FromRequestParts, Path}, http::request::Parts, RequestPartsExt};
 use once_cell::sync::Lazy;
-use redis_utils::redis::RedisPerms;
 use regex::Regex;
 use tracing::{error, info, warn};
 use std::collections::HashMap;
@@ -16,9 +15,21 @@ use axum::http::{Request, Response, StatusCode};
 
 use shared::{tokens::jwt::AccessTokenPayload, utils::set_encoder::decode_set_from_string};
 
+use crate::redis::RedisPerms;
+
 
 // Why we can't directly get a Path<Vec<(String, String)>> in middleware?
 // At least path_extractor -> extensions -> middleware_layer works:
+
+pub trait PermissionChecker {
+    fn check(&self, perm: &String) -> bool;
+}
+
+impl PermissionChecker for AccessTokenPayload {
+    fn check(&self, perm: &String) -> bool {
+        unimplemented!();
+    }
+}
 
 #[derive(Clone)]
 pub enum PermissionPattern {
@@ -52,46 +63,55 @@ impl PermissionBundle {
         let c = REGEX.captures_iter(&permission)
         .filter_map(|m| m.get(1).map(|v| (format!("{{{}}}", v.as_str()), v.as_str().to_string())))
         .collect::<Vec<(String, String)>>();
-        let pattern = 
-        if c.len() != 0 { PermissionPattern::Pattern { replace: c } } else {
-            let perm = postgre_entities::permission::ActiveModel {
-                name: Set(permission.clone()),
-                ..Default::default()
-            };
-            let id = match perm.insert(db).await {
-                Ok(_m) => {
-                    info!("Perm created!");
-                    _m.id
-                }
-                Err(DbErr::Query(RuntimeErr::SqlxError(sqlx::error::Error::Database(err)))) 
-                if err.message().contains("duplicate key value") && err.message().contains("name") => {
-                    // can it all be single-queried?
-                    // this vvv doesn't give id on conflict, but looks a bit cleaner than ^^^
-                    // let v = postgre_entities::permission::Entity::insert(perm).on_conflict_do_nothing().exec(db).await;
-                    // upd: it works strangely - .on_conflict_do_nothing() ignores and return DbErr::Query instead of TryInsertError::Conflict (like ^^^)
-                    let p = postgre_entities::permission::Entity::find()
-                    .filter(postgre_entities::permission::Column::Name.eq(&permission))
-                    .one(db).await?;
-                    p.unwrap_or_else(||unreachable!()).id
-                }
-                Err(err) => {
-                    panic!("Can't create/check perm! {:#?}", err);
-                }
-            };
-            redis.set_rel(&permission, &id)?;
-            PermissionPattern::NoPat { perm_id: id }
-        };
-        Ok(PermissionBundle{perm: permission, pat: pattern, on_fail: StatusCode::UNAUTHORIZED, db: db.clone(), redis: redis.clone()})
+
+        unimplemented!();
+        
+        // let pattern = 
+        // if c.len() != 0 { PermissionPattern::Pattern { replace: c } } else {
+        //     let perm = postgre_entities::permission::ActiveModel {
+        //         name: Set(permission.clone()),
+        //         ..Default::default()
+        //     };
+        //     let id = match perm.insert(db).await {
+        //         Ok(_m) => {
+        //             info!("Perm created!");
+        //             _m.id
+        //         }
+        //         Err(DbErr::Query(RuntimeErr::SqlxError(sqlx::error::Error::Database(err)))) 
+        //         if err.message().contains("duplicate key value") && err.message().contains("name") => {
+        //             // can it all be single-queried?
+        //             // this vvv doesn't give id on conflict, but looks a bit cleaner than ^^^
+        //             // let v = postgre_entities::permission::Entity::insert(perm).on_conflict_do_nothing().exec(db).await;
+        //             // upd: it works strangely - .on_conflict_do_nothing() ignores and return DbErr::Query instead of TryInsertError::Conflict (like ^^^)
+        //             let p = postgre_entities::permission::Entity::find()
+        //             .filter(postgre_entities::permission::Column::Name.eq(&permission))
+        //             .one(db).await?;
+        //             p.unwrap_or_else(||unreachable!()).id
+        //         }
+        //         Err(err) => {
+        //             panic!("Can't create/check perm! {:#?}", err);
+        //         }
+        //     };
+        //     redis.set_rel(&permission, &id)?;
+        //     PermissionPattern::NoPat { perm_id: id }
+        // };
+        // Ok(PermissionBundle{perm: permission, pat: pattern, on_fail: StatusCode::UNAUTHORIZED, db: db.clone(), redis: redis.clone()})
     }
 
     // perm_id -> Set(allowed_groups | allowed_users)
     pub fn try_pass(&self, access: &AccessTokenPayload, kvs: Option<&ExtractedPathKV>) -> Result<(), StatusCode> {
         let user_id = access.user;
-        info!("Starting perm check for {} with {} (encoded)", user_id, access.groups);
-        let Some(groups) = decode_set_from_string(&access.groups) else {
+        unimplemented!();
+        info!("Starting perm check for {} with {} (encoded)", user_id, access.perm_containers);
+        let Some(groups) = decode_set_from_string(&access.perm_containers) else {
             error!("Can't parse groups!");
             return Err(self.on_fail)
         };
+
+        if access.check(&self.perm) {
+            info!("Perm check passed!");
+        }
+
         info!("Perm check passed!");
         info!("Perm: {} ~> {:?}", self.perm, self.compute(kvs));
         
@@ -159,17 +179,18 @@ impl PermissionBundle {
     }
 }
 
+
 /// Permission access layer.
 /// 
 /// You also can use patterns, just put your var in brackets:
-/// ```
+/// ```ignore
 /// route("/user/{id}", <handler>)
 ///     .layer(PermissionAccessLayer::create_and_register("vesper.perm.{id}".to_string(), &db))
 /// 
 /// // binds {id} to {id}
 /// ```
 /// ## DON'T CHAIN IT LIKE THAT:
-/// ```
+/// ```ignore
 /// route("/user/{id}", get(<handler>).layer(perm).post(<handler>).layer(perm2))
 /// ```
 #[derive(Clone)]

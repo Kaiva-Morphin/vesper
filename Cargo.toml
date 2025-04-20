@@ -14,7 +14,7 @@ members = [
     "services/posts",
     "services/service_father",
     "services/filesender",
-    "services/root_panel", "libs/service", "libs/layers",
+    "services/root_panel", "libs/service", "libs/layers", "libs/permissions_lib",
     # "services/old-auth",
 ]
 resolver = "2"
@@ -42,7 +42,6 @@ jsonwebtoken = {version="9.3.1", features = ["use_pem"]}
 lazy_static = "1.5.0"
 cookie = "0.18.1"
 redis = { version = "0.28.2", features = ["r2d2", "tokio-comp", "ahash", "json"] }
-r2d2 = "0.8.10"
 sea-orm-cli = "1.1.7"
 async-nats = "0.39.0"
 

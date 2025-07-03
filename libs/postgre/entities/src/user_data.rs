@@ -5,24 +5,24 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "user_data")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
-    pub uuid: Uuid,
-    #[sea_orm(unique)]
-    pub login: String,
-    pub nickname: String,
-    pub password: String,
+    pub allow_suspicious_refresh: bool,
+    pub last_login_change: Option<DateTime>,
+    pub warn_suspicious_refresh: bool,
+    pub perm_container: Uuid,
     #[sea_orm(unique)]
     pub email: String,
     #[sea_orm(unique)]
-    pub discord_id: Option<String>,
+    pub login: String,
+    pub updated_at: DateTime,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub uuid: Uuid,
+    pub password: String,
     #[sea_orm(unique)]
     pub google_id: Option<String>,
-    pub last_login_change: Option<DateTime>,
-    pub updated_at: DateTime,
+    pub nickname: String,
+    #[sea_orm(unique)]
+    pub discord_id: Option<String>,
     pub created_at: DateTime,
-    pub warn_suspicious_refresh: bool,
-    pub allow_suspicious_refresh: bool,
-    pub perm_container: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -7,9 +7,9 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     pub value: bool,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub perm_container_id: i64,
+    pub perm_container_id: Uuid,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub child_perm_container_id: i64,
+    pub child_perm_container_id: Uuid,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

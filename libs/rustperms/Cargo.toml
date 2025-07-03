@@ -1,0 +1,11 @@
+[package]
+name = "rustperms"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+tokio = {version = "1.46"}
+tracing = "0.1.41"

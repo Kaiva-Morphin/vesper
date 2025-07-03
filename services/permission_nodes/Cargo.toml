@@ -1,0 +1,25 @@
+[package]
+name = "permission_nodes"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.46", features = ["macros", "rt-multi-thread"] }
+tonic = "0.13.1"
+prost = "0.13.5"
+async-nats = "0.42.0"
+
+[[bin]]
+name = "master"
+path = "src/master/main.rs"
+
+[[bin]]
+name = "replica"
+path = "src/replica/main.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"
+
+[build-dependencies]
+tonic-build = "0.13.1"

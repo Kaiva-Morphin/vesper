@@ -29,7 +29,7 @@
 				"-d",
 				"./libs/postgre/migrations",
 				"-u",
-				"postgresql://root:root@localhost:31020/vesper",
+				"postgres://yugabyte@localhost:5433/yugabyte",
 				"generate",
 				"latest"
 			],
@@ -54,7 +54,7 @@
 				"-o",
 				"./libs/postgre/entities/src",
 				"-u",
-				"postgresql://root:root@localhost:31020/vesper",
+				"postgres://yugabyte@localhost:5433/yugabyte",
 			],
 			"problemMatcher": [],
 			"group": {

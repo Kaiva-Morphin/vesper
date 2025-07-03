@@ -18,7 +18,6 @@ impl ParseError {
     }
 }
 
-
 pub trait TryParse<E> {
     fn try_parse<T : std::str::FromStr>(self) -> Result<T, E>;
 }

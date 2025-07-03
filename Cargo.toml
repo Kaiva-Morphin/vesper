@@ -14,7 +14,7 @@ members = [
     "services/posts",
     "services/service_father",
     "services/filesender",
-    "services/root_panel", "libs/service", "libs/layers", "libs/permissions_lib",
+    "services/root_panel", "libs/service", "libs/layers", "libs/permissions_lib", "services/permission_nodes", "libs/rustperms",
     # "services/old-auth",
 ]
 resolver = "2"
@@ -22,28 +22,28 @@ resolver = "2"
 [workspace.dependencies]
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
-sea-orm = {version = "1.1.7", features = ["sqlx-postgres", "runtime-tokio-rustls", "with-time", "with-uuid", "macros"]}
-reqwest = { version = "0.12.12", features = ["json"] }
-chrono = "0.4.40"
+sea-orm = {version = "1.1.11", features = ["sqlx-postgres", "runtime-tokio-rustls", "with-time", "with-uuid", "macros"]}
+reqwest = { version = "0.12.15", features = ["json"] }
+chrono = "0.4.41"
 serde_json = "1.0.140"
 tower ={version = "0.5.2", features = ["full"]}
 tokio = {version = "1.43.0", features = ["full"] }
-tower-http = { version = "0.6.2", features = ["catch-panic", "trace"] }
+tower-http = { version = "0.6.4", features = ["catch-panic", "trace"] }
 include-bytes-plus = "1.1.0"
-anyhow = "1.0.97"
-serde = {version = "1.0.218", features = ["derive"]}
-axum-extra = { version = "0.10.0", features = ["cookie"] }
-axum = { version = "0.8.1", features = ["macros"] }
-uuid = { version = "1.15.1", features = ["serde", "v4"] }
-rand = "0.9.0"
+anyhow = "1.0.98"
+serde = {version = "1.0.219", features = ["derive"]}
+axum-extra = { version = "0.10.1", features = ["cookie"] }
+axum = { version = "0.8.4", features = ["macros"] }
+uuid = { version = "1.16.0", features = ["serde", "v4"] }
+rand = "0.9.1"
 bcrypt = "0.17.0"   
 regex = "1.11.1"
 jsonwebtoken = {version="9.3.1", features = ["use_pem"]}
 lazy_static = "1.5.0"
 cookie = "0.18.1"
-redis = { version = "0.28.2", features = ["r2d2", "tokio-comp", "ahash", "json"] }
-sea-orm-cli = "1.1.7"
-async-nats = "0.39.0"
+redis = { version = "0.31.0", features = ["r2d2", "tokio-comp", "ahash", "json"] }
+sea-orm-cli = "1.1.11"
+async-nats = "0.41.0"
 
 shared = {path = "libs/shared"}
 postgre_migrations = {path = "libs/postgre/migrations"}

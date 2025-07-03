@@ -9,28 +9,26 @@ use crate::{repository::{cookies::TokenCookie, tokens::{generate_access, generat
 
 
 
-
-
-pub struct RefreshProcessor {
+pub struct RefreshProcessor<'a> {
     jar: CookieJar,
-    state: AppState,
+    state: &'a AppState,
     user_info: UserInfoExt,
     record: RefreshTokenRecord,
     refresh_payload: RefreshTokenPayload,
     refresh_rules: RefreshRules
 }
 
-impl RefreshProcessor {
+impl<'a> RefreshProcessor<'a> {
     pub async fn begin(
         mut jar: CookieJar,
-        state: AppState,
+        state: &'a AppState,
         user_info: UserInfoExt,
     ) -> Result<Self, Response<Body>> {
         let Some(refresh_token_string) = jar.get_refresh() else {return Err((jar.rm_refresh(), StatusCode::UNAUTHORIZED).into_response())};
         jar = jar.rm_refresh();
         let Some(refresh_payload) = TokenEncoder::decode_refresh(refresh_token_string) else {return Err((jar, StatusCode::UNAUTHORIZED).into_response())};
         let record = state.redis_tokens.pop_refresh(refresh_payload.rtid).await.trough_app_err()?;
-        let Some(record) = record else {return Err((jar, StatusCode::INTERNAL_SERVER_ERROR).into_response())};
+        let Some(record) = record else {return Err((jar.rm_refresh(), StatusCode::UNAUTHORIZED).into_response())};
         let refresh_rules = refresh_payload.rules.clone();
         Ok(RefreshProcessor {
             jar,
@@ -78,7 +76,7 @@ pub async fn refresh_tokens(
     jar: CookieJar,
     Extension(user_info) : Extension<UserInfoExt>,
 ) -> Result<Response<Body>, Response<Body>>  {
-    Ok(RefreshProcessor::begin(jar, state, user_info).await?.refresh_rules().await?.generate_tokens().await?)
+    Ok(RefreshProcessor::begin(jar, &state, user_info).await?.refresh_rules().await?.generate_tokens().await?)
 }
 
 

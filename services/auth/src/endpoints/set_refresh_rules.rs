@@ -27,7 +27,7 @@ pub async fn set_refresh_rules(
     }): Json<SetRefreshRules>,
 ) -> Result<Response<Body>, Response<Body>> {
     let new_rules= RefreshRules { warn_suspicious_refresh, allow_suspicious_refresh};
-    Ok(RefreshProcessor::begin(jar, state, user_info).await?.refresh_rules().await?.update_refresh_rules(new_rules).await?.generate_tokens().await?)
+    Ok(RefreshProcessor::begin(jar, &state, user_info).await?.refresh_rules().await?.update_refresh_rules(new_rules).await?.generate_tokens().await?)
 }
 
 

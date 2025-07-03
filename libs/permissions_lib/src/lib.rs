@@ -13,6 +13,7 @@ pub mod middleware;
 pub mod redis;
 pub mod structs;
 use structs::*;
+use uuid::Uuid;
 
 #[cfg(test)]
 pub mod tests;
@@ -45,10 +46,10 @@ impl Permissions {
     pub async fn insert(&self, path: &(impl Path + Lifetime + DbInsert)) -> Result<()> {
         if self.redis.get_id(path).await?.is_some() { return Ok(()); }
         path.insert(&self.db).await?;
-        Ok(())        
+        Ok(())
     }
 
-    pub async fn get_id(&self, path: &(impl Path + Lifetime + DbGet)) -> Result<Option<u64>> {
+    pub async fn get_id(&self, path: &(impl Path + Lifetime + DbGet)) -> Result<Option<Uuid>> {
         if let Some(id) = self.redis.get_id(path).await? { return Ok(Some(id));}
         let id = path.get_id_from_db(&self.db).await?;
         let Some(id) = id else {return Ok(None)};
@@ -75,7 +76,7 @@ impl Permissions {
         Ok(())
     }
 
-    pub async fn get_many_ids(&self, perms: &Vec<impl Path + Lifetime + DbGet>) -> Result<HashMap<String, u64>> {
+    pub async fn get_many_ids(&self, perms: &Vec<impl Path + Lifetime + DbGet>) -> Result<HashMap<String, Uuid>> {
         let mut cached = self.redis.get_many_ids(&perms).await?;
         for perm in perms {
             let path = perm.value();
@@ -89,7 +90,7 @@ impl Permissions {
         Ok(cached)
     }
 
-    pub async fn get_many_by_ids(&self, ids: &Vec<impl Id + Lifetime + DbGet>) -> Result<HashMap<u64, String>> {
+    pub async fn get_many_by_ids(&self, ids: &Vec<impl Id + Lifetime + DbGet>) -> Result<HashMap<Uuid, String>> {
         let mut cached = self.redis.get_many_by_ids(&ids).await?;
         for id in ids {
             let id_v = id.value();
@@ -121,5 +122,13 @@ impl Permissions {
         DbDelete::delete_many(&self.db, ids.clone()).await?;
         self.redis.remove_many_by_ids(&ids).await?;
         Ok(())
+    }
+
+    pub async fn get_id_cached(&self, path: &(impl Path + Lifetime + DbGet)) -> Result<Option<Uuid>> {
+        self.redis.get_id(path).await
+    }
+
+    pub async fn get_by_id_cached(&self, id: &(impl Id + Lifetime + DbGet)) -> Result<Option<String>> {
+        self.redis.get_by_id(id).await
     }
 }

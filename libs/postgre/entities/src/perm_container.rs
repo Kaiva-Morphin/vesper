@@ -5,14 +5,14 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "perm_container")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub id: i64,
-    pub weight: i32,
-    pub name: Option<String>,
-    pub color: Option<String>,
     pub visible_in_search: bool,
     pub visible_in_profile: bool,
+    pub name: Option<String>,
     pub pin_link: Option<String>,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub id: Uuid,
+    pub weight: i32,
+    pub color: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

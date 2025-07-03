@@ -94,8 +94,8 @@ impl RedisTokens {
         let rtid_key = rtid_to_key(rtid);
         let mut conn = self.pool.get().await?;
         if let Ok(record) = self.get_refresh_conn(rtid_key.clone(), &mut conn).await {
-            info!("Record found!");
             let Some(record) = record else {return Ok(None)};
+            info!("Record found!");
             let _: Result<(), RedisError> = conn.zrem(user_to_key(record.user), rtid_key.clone()).await;
             let _: Result<(), RedisError> = conn.del(rtid_key).await;
             return Ok(Some(record))

@@ -70,7 +70,7 @@ impl AppState {
             .filter(user_data::Column::Email.eq(email))
             .one(&self.db).await?;
         let Some(user) = user else {
-            warn!("Can't find user!"); //? Possible only if user request password recovery and delete account?
+            warn!("Can't find user!"); //? Possible only if user request password recovery and delete account after?
             return Ok(())
         };
         info!("New password set for {}",  user.uuid);
@@ -90,8 +90,13 @@ impl AppState {
         let warn_suspicious_refresh = true;
 
         let container = perm_container::ActiveModel {
+            weight: Set(3),
+            visible_in_search: Set(false),
+            visible_in_profile: Set(false),
             ..Default::default()
         };
+
+        let container = container.insert(&self.db).await?;
 
         let user = user_data::ActiveModel {
             uuid: Set(user_uuid.clone()),
@@ -101,7 +106,7 @@ impl AppState {
             email: Set(register_body.email),
             allow_suspicious_refresh: Set(allow_suspicious_refresh),
             warn_suspicious_refresh: Set(warn_suspicious_refresh),
-            perm_container: container.id,
+            perm_container: Set(container.id),
             ..Default::default()
         };
 

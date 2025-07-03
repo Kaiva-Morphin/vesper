@@ -20,4 +20,4 @@ db = { version = "0.1.0", path = "../../libs/postgre/db" }
 base64 = "0.22.1"
 service = { version = "0.1.0", path = "../../libs/service" }
 layers = { version = "0.1.0", path = "../../libs/layers" }
-permissions_lib = { version = "0.1.0", path = "../../libs/permissions_lib" }
+casbin_perm_lib = { version = "0.1.0", path = "../../libs/casbin_perm_lib" }

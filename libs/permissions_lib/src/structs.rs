@@ -1,38 +1,41 @@
-use migration::{OnConflict, SimpleExpr};
-use sea_orm::{ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter};
+use migration::{IdenList, OnConflict, SimpleExpr};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, DbBackend, EntityTrait, ModelTrait, QueryFilter, QueryTrait};
 use anyhow::Result;
+use uuid::Uuid;
 
-pub trait Lifetime {fn get_lifetime(&self) -> i64;}
+pub trait Lifetime {
+    fn get_lifetime(&self) -> i64;
+}
 
 pub trait Path {
     fn to_key(&self) -> String;
-    fn construct_id(&self, id: u64) -> impl Id + Lifetime;
+    fn construct_id(&self, id: Uuid) -> impl Id + Lifetime;
     fn value(&self) -> &str;
 }
 
 pub trait Id {
     fn to_key(&self) -> String;
     fn construct_path(&self, path: String) -> impl Path + Lifetime;
-    fn value(&self) -> u64;
+    fn value(&self) -> Uuid;
 }
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Wildcard(pub String);
 #[derive(PartialEq, Debug, Clone)]
-pub struct WildcardId(pub u64);
+pub struct WildcardId(pub Uuid);
 #[derive(PartialEq, Debug, Clone)]
 pub struct Perm(pub String);
 #[derive(PartialEq, Debug, Clone)]
-pub struct PermId(pub u64);
+pub struct PermId(pub Uuid);
 
 const PERM_ID_REL_PREFIX : &'static str = "PERM_ID";
 const ID_PERM_REL_PREFIX : &'static str = "ID_PERM";
 fn perm_to_key(perm: &str) -> String {
     format!("{}::{}", PERM_ID_REL_PREFIX, perm)
-    
 }
 
-fn perm_id_to_key(id: &u64) -> String {
-    format!("{}::{}", ID_PERM_REL_PREFIX, id)
+fn perm_id_to_key(id: &Uuid) -> String {
+    format!("{}::{}", ID_PERM_REL_PREFIX, id.to_string())
 }
 
 const WILDCARD_ID_REL_PREFIX : &'static str = "WILDCARD_ID";
@@ -42,8 +45,8 @@ fn wildcard_to_key(perm: &str) -> String {
     
 }
 
-fn wildcard_id_to_key(id: &u64) -> String {
-    format!("{}::{}", ID_WILDCARD_REL_PREFIX, id)
+fn wildcard_id_to_key(id: &Uuid) -> String {
+    format!("{}::{}", ID_WILDCARD_REL_PREFIX, id.to_string())
 }
 
 
@@ -51,13 +54,14 @@ impl Path for Wildcard {
     fn to_key(&self) -> String {
         wildcard_to_key(&self.0)
     }
-    fn construct_id(&self, id: u64) -> impl Id + Lifetime {
+    fn construct_id(&self, id: Uuid) -> impl Id + Lifetime {
         WildcardId(id)
     }
     fn value(&self) -> &str {
         &self.0
     }
 }
+
 impl Id for WildcardId {
     fn to_key(&self) -> String {
         wildcard_id_to_key(&self.0)
@@ -65,7 +69,7 @@ impl Id for WildcardId {
     fn construct_path(&self, path: String) -> impl Path + Lifetime {
         Wildcard(path)
     }
-    fn value(&self) -> u64 {
+    fn value(&self) -> Uuid {
         self.0
     }
 }
@@ -73,7 +77,7 @@ impl Path for Perm {
     fn to_key(&self) -> String {
         perm_to_key(&self.0)
     }
-    fn construct_id(&self, id: u64) -> impl Id + Lifetime {
+    fn construct_id(&self, id: Uuid) -> impl Id + Lifetime {
         PermId(id)
     }
     fn value(&self) -> &str {
@@ -87,7 +91,7 @@ impl Id for PermId {
     fn construct_path(&self, path: String) -> impl Path + Lifetime {
         Perm(path)
     }
-    fn value(&self) -> u64 {
+    fn value(&self) -> Uuid {
         self.0
     }
 }
@@ -97,7 +101,7 @@ pub trait DbStructRel {
     type ActiveModel: ActiveModelTrait<Entity = Self::Entity> + Send + Sync;
     type Column: ColumnTrait;
     fn equal_path(&self) -> SimpleExpr;
-    fn path_col() -> Self::Column;
+    fn conflict_col_ign() -> [Self::Column; 2];
     fn path_in(things: Vec<Self>) -> SimpleExpr where Self : Sized;
     fn active_model(&self) -> Self::ActiveModel;
     fn construct_id(entity: <Self::Entity as EntityTrait>::Model) -> impl Id + Lifetime;
@@ -114,17 +118,18 @@ impl DbStructRel for Perm {
     fn path_in(things: Vec<Self>) -> SimpleExpr where Self : Sized {
         postgre_entities::permission::Column::Path.is_in(&things)
     }
-    fn path_col() -> Self::Column {
-        Self::Column::Path
+    fn conflict_col_ign() -> [Self::Column; 2] {
+        [Self::Column::Path, Self::Column::PermId]
     }
     fn active_model(&self) -> Self::ActiveModel {
         Self::ActiveModel {
             path: Set(self.value().to_string()),
+            perm_id: Set(Uuid::new_v4()),
             ..Default::default()
         }
     }
     fn construct_id(entity: <Self::Entity as EntityTrait>::Model) -> impl Id + Lifetime {
-        PermId(entity.perm_id as u64)
+        PermId(entity.perm_id)
     }
     fn construct_path(entity: <Self::Entity as EntityTrait>::Model) -> impl Path + Lifetime {
         Perm(entity.path)
@@ -141,17 +146,17 @@ impl DbStructRel for PermId {
     fn path_in(things: Vec<Self>) -> SimpleExpr where Self : Sized {
         postgre_entities::permission::Column::PermId.is_in(&things)
     }
-    fn path_col() -> Self::Column {
-        Self::Column::PermId
+    fn conflict_col_ign() -> [Self::Column; 2] {
+        [Self::Column::Path, Self::Column::PermId]
     }
     fn active_model(&self) -> Self::ActiveModel {
         Self::ActiveModel {
-            perm_id: Set(self.value() as i64),
+            perm_id: Set(self.value()),
             ..Default::default()
         }
     }
     fn construct_id(entity: <Self::Entity as EntityTrait>::Model) -> impl Id + Lifetime {
-        PermId(entity.perm_id as u64)
+        PermId(entity.perm_id as Uuid)
     }
     fn construct_path(entity: <Self::Entity as EntityTrait>::Model) -> impl Path + Lifetime {
         Perm(entity.path)
@@ -168,17 +173,18 @@ impl DbStructRel for Wildcard {
     fn path_in(things: Vec<Self>) -> SimpleExpr where Self : Sized {
         postgre_entities::perm_wildcard::Column::Path.is_in(&things)
     }
-    fn path_col() -> Self::Column {
-        Self::Column::Path
+    fn conflict_col_ign() -> [Self::Column; 2] {
+        [Self::Column::Path, Self::Column::PermWildcardId]
     }
     fn active_model(&self) -> Self::ActiveModel {
         Self::ActiveModel {
             path: Set(self.value().to_string()),
+            perm_wildcard_id: Set(Uuid::new_v4()),
             ..Default::default()
         }
     }
     fn construct_id(entity: <Self::Entity as EntityTrait>::Model) -> impl Id + Lifetime {
-        WildcardId(entity.perm_wildcard_id as u64)
+        WildcardId(entity.perm_wildcard_id as Uuid)
     }
     fn construct_path(entity: <Self::Entity as EntityTrait>::Model) -> impl Path + Lifetime {
         Wildcard(entity.path)
@@ -195,17 +201,17 @@ impl DbStructRel for WildcardId {
     fn path_in(things: Vec<Self>) -> SimpleExpr where Self : Sized {
         postgre_entities::perm_wildcard::Column::PermWildcardId.is_in(&things)
     }
-    fn path_col() -> Self::Column {
-        Self::Column::PermWildcardId
+    fn conflict_col_ign() -> [Self::Column; 2] {
+        [Self::Column::Path, Self::Column::PermWildcardId]
     }
     fn active_model(&self) -> Self::ActiveModel {
         Self::ActiveModel {
-            perm_wildcard_id: Set(self.value() as i64),
+            perm_wildcard_id: Set(self.value()),
             ..Default::default()
         }
     }
     fn construct_id(entity: <Self::Entity as EntityTrait>::Model) -> impl Id + Lifetime {
-        PermId(entity.perm_wildcard_id as u64)
+        PermId(entity.perm_wildcard_id as Uuid)
     }
     fn construct_path(entity: <Self::Entity as EntityTrait>::Model) -> impl Path + Lifetime {
         Perm(entity.path)
@@ -239,13 +245,13 @@ impl From<&Wildcard> for sea_orm::Value {
 
 impl From<&PermId> for sea_orm::Value {
     fn from(v: &PermId) -> Self {
-        sea_orm::Value::BigInt(Some(v.value() as i64))
+        sea_orm::Value::Uuid(Some(Box::new(v.value())))
     }
 }
 
 impl From<&WildcardId> for sea_orm::Value {
     fn from(v: &WildcardId) -> Self {
-        sea_orm::Value::BigInt(Some(v.value() as i64))
+        sea_orm::Value::Uuid(Some(Box::new(v.value())))
     }
 }
 
@@ -267,28 +273,53 @@ impl<T: DbStructRel + Sync + Send> DbDelete for T {
 impl<T: DbStructRel + Sync + Send> DbInsert for T {
     async fn insert(&self, db: &DatabaseConnection) -> Result<()> {
         let m = self.active_model();
-        T::Entity::insert(m).on_conflict(
-            OnConflict::column(Self::path_col()).do_nothing().to_owned()
-        ).exec(db).await?;
+        let r = <T::Entity as EntityTrait>::insert(m).on_conflict(
+            OnConflict::new().do_nothing().to_owned()
+        ).exec(db).await;
+        if let Err(sea_orm::DbErr::RecordNotInserted) = r {return Ok(());}
+        let _ = r?;
         Ok(())
     }
     async fn insert_many(db: &DatabaseConnection, things: Vec<Self>) -> Result<()> {
         let models : Vec<T::ActiveModel> = things.into_iter().map(|v| v.active_model()).collect();
         if models.is_empty() {return Ok(());}
-        T::Entity::insert_many(models).on_conflict(
-            OnConflict::column(postgre_entities::permission::Column::Path).do_nothing().to_owned()
-        ).exec(db).await?;
+        let r = T::Entity::insert_many(models).on_conflict(
+            OnConflict::new().do_nothing().to_owned()
+        ).exec(db).await;
+        if let Err(sea_orm::DbErr::RecordNotInserted) = r {return Ok(());}
+        let _ = r?;
         Ok(())
     }
 }
 
 impl<T: DbStructRel + Sync + Send> DbGet for T {
     async fn get_id_from_db(&self, db: &DatabaseConnection) -> Result<Option<impl Id + Lifetime>> {
-        let p = T::Entity::find().filter(self.equal_path()).one(db).await?;
+        let p = <T::Entity as EntityTrait>::find().filter(self.equal_path()).one(db).await?;
         Ok(p.and_then(|v| Some(T::construct_id(v))))
     }
     async fn get_path_from_db(&self, db: &DatabaseConnection) -> Result<Option<impl Path + Lifetime>> {
-        let p = T::Entity::find().filter(self.equal_path()).one(db).await?;
+        let p = <T::Entity as EntityTrait>::find().filter(self.equal_path()).one(db).await?;
         Ok(p.and_then(|v| Some(T::construct_path(v))))
+    }
+}
+
+
+pub struct PermContainer {
+    pub id: Uuid,
+    pub perms: Vec<(Perm, bool)>,
+    pub wildcards: Vec<(Wildcard, bool)>,
+    pub containers: Vec<(PermContainer, bool)>,
+    pub weight: i32
+}
+
+impl PermContainer {
+    pub fn new() -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            perms: vec![],
+            wildcards: vec![],
+            containers: vec![],
+            weight: 0
+        }
     }
 }

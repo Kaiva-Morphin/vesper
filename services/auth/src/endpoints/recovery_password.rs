@@ -21,6 +21,7 @@ pub async fn request_password_recovery(
     headers: HeaderMap,
     Json(request_body): Json<RecoveryRequest>,
 ) -> Result<impl IntoResponse, AppErr> {
+    // TODO!: MOVE TO MIDDLEWARE
     #[cfg(not(feature = "disable_turnstile"))]
     if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::BAD_REQUEST, "Turnstile failed").into_response())};
     Ok(state.try_send_recovery_code(&request_body.email_or_login).await?)
@@ -33,13 +34,13 @@ pub struct UpdateRequest {
 }
 
 
-#[axum::debug_handler]
 pub async fn recovery_password(
     State(state): State<AppState>,
     Query(params): Query<HashMap<String, String>>,
     Json(request_body): Json<UpdateRequest>,
 ) -> Result<impl IntoResponse, AppErr> {
     #[cfg(not(feature = "disable_turnstile"))]
+    // TODO!: MOVE TO MIDDLEWARE
     if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::BAD_REQUEST, "Turnstile failed").into_response())};
     if !request_body.new_password.is_password_valid() {return Ok((StatusCode::BAD_REQUEST, "Bad password!").into_response())}
     if let Some(token) = params.get("token") {

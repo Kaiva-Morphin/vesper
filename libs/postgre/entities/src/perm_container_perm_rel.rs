@@ -5,11 +5,11 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "perm_container_perm_rel")]
 pub struct Model {
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub perm_container_id: Uuid,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub perm_id: Uuid,
     pub value: bool,
-    #[sea_orm(primary_key, auto_increment = false)]
-    pub perm_container_id: i64,
-    #[sea_orm(primary_key, auto_increment = false)]
-    pub perm_id: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

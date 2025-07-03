@@ -5,8 +5,8 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "perm_wildcard")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub perm_wildcard_id: i64,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub perm_wildcard_id: Uuid,
     #[sea_orm(unique)]
     pub path: String,
 }

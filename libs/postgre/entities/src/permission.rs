@@ -5,10 +5,10 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "permission")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub perm_id: i64,
     #[sea_orm(unique)]
     pub path: String,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub perm_id: Uuid,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

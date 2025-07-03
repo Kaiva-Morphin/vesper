@@ -1,0 +1,19 @@
+[package]
+name = "casbin_perm_lib"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+once_cell = "1.21.3"
+redis.workspace = true
+regex.workspace = true
+sea-orm.workspace = true
+shared.workspace = true
+sqlx = { version = "0.8", default-features = false,  features = [ "postgres",  "runtime-tokio-native-tls" ] }
+sqlx-adapter = { version = "1.7.0", default-features = false, features = ["postgres", "runtime-tokio-native-tls"]}
+# casbin = { version = "2.8.0", default-features = false, features = ["runtime-async-std", "logging", "incremental"] }
+tokio = { version = "1.45.0", features = ["fs", "io-util"] }
+tower.workspace = true
+tracing.workspace = true

@@ -11,8 +11,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(PermContainer::Table)
                     .if_not_exists()
-                    .col(big_integer(PermContainer::Id)
-                        .auto_increment()
+                    .col(uuid(PermContainer::Id)
                         // .unsigned() <-- doesn't support auto incr
                         .not_null()
                         .primary_key()
@@ -31,7 +30,7 @@ impl MigrationTrait for Migration {
         manager
             .alter_table(Table::alter()
                 .table(UserData::Table)
-                .add_column(big_integer(UserData::PermContainer).not_null())
+                .add_column(uuid(UserData::PermContainer).not_null())
                 .add_foreign_key(
                     ForeignKey::create()
                         .name("fk-user-perm_container")
@@ -49,8 +48,8 @@ impl MigrationTrait for Migration {
                     .table(PermContainerContainerRel::Table)
                     .if_not_exists()
                     .col(boolean(PermContainerContainerRel::Value).not_null().default(true))
-                    .col(big_integer(PermContainerContainerRel::PermContainerId).not_null())
-                    .col(big_integer(PermContainerContainerRel::ChildPermContainerId).not_null())
+                    .col(uuid(PermContainerContainerRel::PermContainerId).not_null())
+                    .col(uuid(PermContainerContainerRel::ChildPermContainerId).not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-perm_container_rel-child_perm_container")
@@ -76,7 +75,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(Permission::Table)
                     .if_not_exists()
-                    .col(big_integer(Permission::PermId).auto_increment().not_null().primary_key().unique_key())
+                    .col(uuid(Permission::PermId).not_null().primary_key().unique_key())
                     .col(string(Permission::Path).not_null().unique_key())
                     .to_owned()
             ).await?;
@@ -87,8 +86,8 @@ impl MigrationTrait for Migration {
                     .table(PermContainerPermRel::Table)
                     .if_not_exists()
                     .col(boolean(PermContainerPermRel::Value).not_null().default(true))
-                    .col(big_integer(PermContainerPermRel::PermContainerId).not_null())
-                    .col(big_integer(PermContainerPermRel::PermId).not_null())
+                    .col(uuid(PermContainerPermRel::PermContainerId).not_null())
+                    .col(uuid(PermContainerPermRel::PermId).not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-perm_container_perm_rel-perm_container")
@@ -113,7 +112,7 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(PermWildcard::Table)
                     .if_not_exists()
-                    .col(big_integer(PermWildcard::PermWildcardId).auto_increment().not_null().primary_key().unique_key())
+                    .col(uuid(PermWildcard::PermWildcardId).not_null().primary_key().unique_key())
                     .col(string(PermWildcard::Path).not_null().unique_key())
                     .to_owned()
             ).await?;
@@ -124,8 +123,8 @@ impl MigrationTrait for Migration {
                     .table(PermContainerWildcardRel::Table)
                     .if_not_exists()
                     .col(boolean(PermContainerWildcardRel::Value).not_null().default(true))
-                    .col(big_integer(PermContainerWildcardRel::PermContainerId).not_null())
-                    .col(big_integer(PermWildcard::PermWildcardId).not_null())
+                    .col(uuid(PermContainerWildcardRel::PermContainerId).not_null())
+                    .col(uuid(PermWildcard::PermWildcardId).not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk-perm_container_wildcard_rel-perm_container")

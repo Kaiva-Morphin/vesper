@@ -10,9 +10,9 @@ pub type Username = String;
 #[derive(Serialize, Deserialize)] 
 #[derive(Clone, Debug)]
 pub struct User {
-    pub(crate) username: Username,
-    pub(crate) groups: HashSet<Groupname>,
-    pub(crate) permissions: PermissionRuleNode,
+    pub username: Username,
+    pub groups: HashSet<Groupname>,
+    pub permissions: PermissionRuleNode,
 }
 
 impl User {
@@ -31,11 +31,22 @@ impl User {
     pub fn remove_group(&mut self, group: &Groupname) {self.groups.remove(group);}
 
     pub fn get_perms(&self) -> &PermissionRuleNode {&self.permissions}
+    
 }
 
 impl PermissionInterface for User {
     fn set_perm(&mut self, path: PermissionPath, enabled: bool) {self.permissions.set(path, enabled)}
+    fn set_perms(&mut self, perms: Vec<super::prelude::PermissionRule>) {
+        for (perm, enabled) in perms {
+            self.set_perm(perm, enabled);
+        }
+    }
     fn remove_perm(&mut self, path: &PermissionPath) {self.permissions.remove(path)}
+    fn remove_perms(&mut self, perms: Vec<PermissionPath>) {
+        for path in perms {
+            self.remove_perm(&path);
+        }
+    }
     fn get_perm(&self, path: &PermissionPath) -> Option<bool> {self.permissions.get(path)}
     fn get_perms(&self) -> &PermissionRuleNode {&self.permissions}
     fn merge(&mut self, other: Self) {self.permissions.merge(other.permissions);}

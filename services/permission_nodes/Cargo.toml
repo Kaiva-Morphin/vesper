@@ -5,21 +5,24 @@ edition = "2024"
 
 [dependencies]
 tokio = { version = "1.46", features = ["macros", "rt-multi-thread"] }
-tonic = "0.13.1"
 prost = "0.13.5"
 async-nats = "0.42.0"
+rustperms = { version = "0.1.0", path = "../../libs/rustperms" }
+shared.workspace = true
+prost-types = "0.14.1"
+serde.workspace = true
+bincode = "2.0.1"
+sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "macros"] }
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 
 [[bin]]
 name = "master"
-path = "src/master/main.rs"
+path = "src/master.rs"
 
 [[bin]]
 name = "replica"
-path = "src/replica/main.rs"
+path = "src/replica.rs"
 
-[[bin]]
-name = "client"
-path = "src/client.rs"
 
-[build-dependencies]
-tonic-build = "0.13.1"

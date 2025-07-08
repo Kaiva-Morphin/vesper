@@ -2,9 +2,12 @@ use std::{borrow::Borrow, collections::HashMap};
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 
+// todo: use bytes with limited alph instead
 pub type PermissionPart = String;
-pub type PermissionPath = Vec<PermissionPart>;
+pub type PermissionPath = SmallVec<[PermissionPart; 6]>;
+pub type PermissionRule = (PermissionPath, bool);
 
 pub trait PermPath {
     fn from_str(path: &str) -> Self;
@@ -123,13 +126,15 @@ impl PermissionRuleNode {
     }
 
     pub fn get_records(&self) -> Vec<PermissionPath> {
-        let mut records = Vec::new();
+        let mut records: Vec<PermissionPath> = Vec::new();
         if let Some(enabled) = self.enabled {
-            records.push(vec![enabled.to_string()]);
+            let mut v = SmallVec::new();
+            v.push(enabled.to_string());
+            records.push(v);
         }
         for (key, child) in self.children.iter() {
             for record in child.get_records() {
-                let mut new_record = Vec::with_capacity(record.len() + 1);
+                let mut new_record = SmallVec::with_capacity(record.len() + 1);
                 new_record.push(key.clone());
                 new_record.extend(record);
                 records.push(new_record);
@@ -155,7 +160,9 @@ impl PermissionRuleNode {
 
 pub trait PermissionInterface {
     fn set_perm(&mut self, path: PermissionPath, enabled: bool);
+    fn set_perms(&mut self, perms: Vec<PermissionRule>);
     fn remove_perm(&mut self, path: &PermissionPath);
+    fn remove_perms(&mut self, perms: Vec<PermissionPath>);
     fn get_perm(&self, path: &PermissionPath) -> Option<bool>;
     fn get_perms(&self) -> &PermissionRuleNode;
     fn get_records(&self) -> Vec<PermissionPath> {self.get_perms().get_records()}
@@ -166,9 +173,9 @@ pub trait PermissionInterface {
 
 #[test]
 fn test_perm_path() {
-    assert_eq!(PermissionPath::from_str("a.b.c"), vec!["a", "b", "c"]);
-    assert_eq!(PermissionPath::from_str("a.b.c.d"), vec!["a", "b", "c", "d"]);
-    assert_eq!(PermissionPath::from_str("a.b.c.d.e"), vec!["a", "b", "c", "d", "e"]);
+    assert_eq!(PermissionPath::from_str("a.b.c"), ["a", "b", "c"].into());
+    assert_eq!(PermissionPath::from_str("a.b.c.d"), ["a", "b", "c", "d"].into());
+    assert_eq!(PermissionPath::from_str("a.b.c.d.e"), ["a", "b", "c", "d", "e"].into());
 }
 #[test]
 fn test_perm_path_format() {

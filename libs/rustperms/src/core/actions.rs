@@ -20,8 +20,8 @@ impl<T: PermissionInterface> Set<(PermissionPath, bool)> for T {
 }
 
 
-impl Set<usize> for Group {
-    fn set(&mut self, to_set: usize) {
+impl Set<i32> for Group {
+    fn set(&mut self, to_set: i32) {
         self.weight = to_set;
     }
 }

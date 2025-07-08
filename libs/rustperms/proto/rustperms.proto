@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package rustperms_manager;
+
+import "google/protobuf/empty.proto";
+
+service MasterNode {
+    rpc GetSnapshot (google.protobuf.Empty) returns (SnapshotResponse);
+}
+
+
+message SnapshotResponse {
+    string serialized_users = 1;
+    string serialized_groups = 2;
+}
+
+service ReplicaNode {
+    rpc CheckPerm(CheckPermRequest) returns (CheckPermReply);
+}
+
+message CheckPermRequest {
+   string username = 1;
+   string permission = 2;
+   bool unset_policy = 3;
+}
+
+message CheckPermReply {
+    bool result = 1;
+}

@@ -16,24 +16,9 @@ pub struct MasterNode<T> {
     pub storage: T,
 }
 
-use sqlx::IntoArguments;
-use rustperms::prelude::RustpermsOperation;
-use crate::db::SqlQuery;
-use sqlx::Type;
 
 #[tonic::async_trait]
-impl RustpermsMasterProto for MasterNode<PostgreStorage> 
-where 
-    PostgreStorage : SqlStore<Postgres> + Send,
-    AsyncManager: ReflectedApply<Postgres> + Send + Sync,
-    std::string::String: sqlx::Encode<'static, Postgres> + Type<Postgres>,
-    i32: sqlx::Encode<'static, Postgres> + Type<Postgres>,
-    Vec<bool>: sqlx::Encode<'static, Postgres> + Type<Postgres>,
-    Vec<String>: sqlx::Encode<'static, Postgres> + Type<Postgres>,
-    <Postgres as sqlx::Database>::Arguments<'static>: IntoArguments<'static, Postgres>,
-    RustpermsOperation : SqlQuery<Postgres>,
-    Pudge: Dota<Postgres>,
-{
+impl RustpermsMasterProto for MasterNode<PostgreStorage> {
     async fn get_snapshot(
         &self,
         _request: Request<()>,
@@ -51,52 +36,9 @@ where
         let WriteRequest{serialized_delta} = request.into_inner();
         let delta = RustpermsDelta::deserialize_from_string(&serialized_delta).map_status(Status::internal(""))?;
         self.manager.reflected_apply(&self.storage, delta).await.map_status(Status::internal(""))?;
-        // <AsyncManager as ReflectedApply2<Postgres>>::reflected_apply(&self.manager, &self.storage, delta).await;
-        // <Pudge as Dota<Postgres>>::hook(&self.storage, delta).await;
-        Pudge.hook().await;
         Ok(Response::new(()))
     }
 }
-
-/*
-
-    async fn get_snapshot(
-        &self,
-        _request: Request<()>,
-    ) -> Result<Response<SnapshotResponse>, Status> {
-        let reply = SnapshotResponse {
-            serialized_groups: self.manager.groups_to_string().await.map_err(|_| Status::internal("Can't encode groups"))?,
-            serialized_users: self.manager.users_to_string().await.map_err(|_| Status::internal("Can't encode users"))?,
-        };
-        Ok(Response::new(reply))
-    }
-    async fn write_changes(
-        &self,
-        request: Request<WriteRequest>,
-    ) -> Result<Response<()>, Status> {
-        let WriteRequest{serialized_delta} = request.into_inner();
-        let delta = RustpermsDelta::deserialize_from_string(&serialized_delta).map_status(Status::internal(""))?;
-        // self.manager.reflected_apply(&self.storage, delta).await.map_status(Status::internal(""))?;
-        // <AsyncManager as ReflectedApply2<Postgres>>::reflected_apply(&self.manager, &self.storage, delta).await;
-        // <Pudge as Dota<Postgres>>::hook(&self.storage, delta).await;
-        Pudge.hook().await;
-        Ok(Response::new(()))
-    }
-*/
-
-use sqlx::Postgres;
-pub trait Dota<DB : sqlx::Database + Sync + Send> {
-    fn hook(&self) -> impl std::future::Future<Output = ()> + Send;
-}
-
-struct Pudge;
-impl Dota<Postgres> for Pudge {
-    fn hook(&self) -> impl std::future::Future<Output = ()> + Send {
-        async move {}
-    }
-}
-
-
 pub trait MapStatus<T> {
     fn map_status(self, status: Status) -> Result<T, Status>;
 }

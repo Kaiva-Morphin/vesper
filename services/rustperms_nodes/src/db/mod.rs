@@ -12,6 +12,7 @@ pub const USER_SCHEMA : &'static str = include_str!("./schema/user.sql");
 pub const GROUP_SCHEMA : &'static str = include_str!("./schema/group.sql");
 pub const DROP_SCHEMA : &'static str = include_str!("./schema/drop.sql");
 
+
 pub struct PostgreStorage {
     conn: Pool<Postgres>
 }
@@ -29,26 +30,36 @@ impl PostgreStorage {
     }
 }
 
-pub trait SqlQuery<DB : sqlx::Database> {
-    async fn sql_query<'e>(self, e: (impl Executor<'_, Database = DB> + Send)) -> Result<()>
+
+pub trait SqlStore {
+    type Database : sqlx::Database;
+    async fn begin_tx(&self) -> Result<Transaction<'_, Self::Database>>;
+    async fn init_schema(&self) -> anyhow::Result<()>;
+    async fn drop_tables(&self) -> anyhow::Result<()>;
+    async fn load_manager(&self) -> Result<AsyncManager>;
+    async fn sql_query<'e>(&self, operation: RustpermsOperation, e: impl Executor<'_, Database = Self::Database>) -> Result<()>
     where
-        std::string::String: sqlx::Encode<'e, DB> + Type<DB>,
-        i32: sqlx::Encode<'e, DB> + Type<DB>,
-        Vec<bool>: sqlx::Encode<'e, DB> + Type<DB>,
-        Vec<String>: sqlx::Encode<'e, DB> + Type<DB>,
-        <DB as sqlx::Database>::Arguments<'e>: IntoArguments<'e, DB>;
+        std::string::String: sqlx::Encode<'e, Self::Database> + Type<Self::Database>,
+        i32: sqlx::Encode<'e, Self::Database> + Type<Self::Database>,
+        Vec<bool>: sqlx::Encode<'e, Self::Database> + Type<Self::Database>,
+        Vec<String>: sqlx::Encode<'e, Self::Database> + Type<Self::Database>,
+        <Self::Database as sqlx::Database>::Arguments<'e>: IntoArguments<'e, Self::Database>;
 }
 
-impl<DB : sqlx::Database> SqlQuery<DB> for RustpermsOperation {
-    async fn sql_query<'e>(self, e: impl Executor<'_, Database = DB> + Send) -> Result<()> 
+impl SqlStore for PostgreStorage 
+where 
+    Postgres : sqlx::Database
+{
+    type Database = Postgres;
+    async fn sql_query<'e>(&self, operation: RustpermsOperation, e: impl Executor<'_, Database = Self::Database>) -> Result<()>
     where
-        std::string::String: sqlx::Encode<'e, DB> + Type<DB>,
-        i32: sqlx::Encode<'e, DB> + Type<DB>,
-        Vec<bool>: sqlx::Encode<'e, DB> + Type<DB>,
-        Vec<String>: sqlx::Encode<'e, DB> + Type<DB>,
-        <DB as sqlx::Database>::Arguments<'e>: IntoArguments<'e, DB>
+        std::string::String: sqlx::Encode<'e, Self::Database> + Type<Self::Database>,
+        i32: sqlx::Encode<'e, Self::Database> + Type<Self::Database>,
+        Vec<bool>: sqlx::Encode<'e, Self::Database> + Type<Self::Database>,
+        Vec<String>: sqlx::Encode<'e, Self::Database> + Type<Self::Database>,
+        <Self::Database as sqlx::Database>::Arguments<'e>: IntoArguments<'e, Self::Database>
     {
-        match self {
+        match operation {
             RustpermsOperation::UserCreate(u) => {
                 tracing::info!("Creating user: {}", u);
                 sqlx::query("INSERT INTO rustperms_user (user_uid) VALUES ($1) ON CONFLICT (user_uid) DO nothing")
@@ -192,19 +203,7 @@ impl<DB : sqlx::Database> SqlQuery<DB> for RustpermsOperation {
             }
         }
     }
-}
 
-
-#[async_trait]
-pub trait SqlStore<DB: sqlx::Database> : Sync {
-    async fn begin_tx(&self) -> Result<Transaction<'_, DB>>;
-    async fn init_schema(&self) -> anyhow::Result<()>;
-    async fn drop_tables(&self) -> anyhow::Result<()>;
-    async fn load_manager(&self) -> Result<AsyncManager>;
-}
-
-#[async_trait]
-impl SqlStore<Postgres> for PostgreStorage {
     async fn begin_tx(&self) -> Result<Transaction<'_, Postgres>> {
         let tx: Transaction<'_, Postgres> = self.conn.begin().await?;
         Ok(tx)
@@ -252,29 +251,28 @@ impl SqlStore<Postgres> for PostgreStorage {
 }
 
 #[tonic::async_trait]
-pub trait ReflectedApply<DB : sqlx::Database>{
-    async fn reflected_apply(&self, storage: &impl SqlStore<DB>, actions: RustpermsDelta) -> Result<()>;
+pub trait ReflectedApply<DB : SqlStore>{
+    async fn reflected_apply<'e>(&self, storage: &DB, actions: RustpermsDelta) -> Result<()>;
 }
 
 #[tonic::async_trait]
-impl ReflectedApply<Postgres> for AsyncManager {
-    async fn reflected_apply(&self, storage: &impl SqlStore<Postgres>, actions: RustpermsDelta) -> Result<()>
-    where 
-        std::string::String: sqlx::Encode<'static, Postgres> + Type<Postgres>,
-        i32: sqlx::Encode<'static, Postgres> + Type<Postgres>,
-        Vec<bool>: sqlx::Encode<'static, Postgres> + Type<Postgres>,
-        Vec<String>: sqlx::Encode<'static, Postgres> + Type<Postgres>,
-        <Postgres as sqlx::Database>::Arguments<'static>: IntoArguments<'static, Postgres>,
-        RustpermsOperation : SqlQuery<Postgres> {
+impl ReflectedApply<PostgreStorage> for AsyncManager {
+    async fn reflected_apply<'e>(&self, storage: &PostgreStorage, actions: RustpermsDelta) -> Result<()> 
+    where
+        std::string::String: sqlx::Encode<'e, <PostgreStorage as SqlStore>::Database> + Type<<PostgreStorage as SqlStore>::Database>,
+        i32: sqlx::Encode<'e, <PostgreStorage as SqlStore>::Database> + Type<<PostgreStorage as SqlStore>::Database>,
+        Vec<bool>: sqlx::Encode<'e, <PostgreStorage as SqlStore>::Database> + Type<<PostgreStorage as SqlStore>::Database>,
+        Vec<String>: sqlx::Encode<'e, <PostgreStorage as SqlStore>::Database> + Type<<PostgreStorage as SqlStore>::Database>,
+        <<PostgreStorage as SqlStore>::Database as sqlx::Database>::Arguments<'e>: IntoArguments<'e, <PostgreStorage as SqlStore>::Database>
+    {
         let mut users = self.users.write().await;
         let mut groups = self.groups.write().await;
         let mut tx = storage.begin_tx()
             .await
             .inspect_err(|e| error!("Can't begin transaction: {:?}", e))?; // todo: delay writes.
-        
         for action in actions.into_iter() {
-            if Self::apply_action(&mut users, &mut groups, action.clone()) {
-                action.sql_query(&mut *tx).await
+            if AsyncManager::apply_action(&mut users, &mut groups, action.clone()) {
+                storage.sql_query(action, &mut *tx).await
                     .inspect_err(|e| error!("Can't execute sql query for action: {:?}", e))
                     .ok();
             }

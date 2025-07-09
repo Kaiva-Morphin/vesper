@@ -6,4 +6,4 @@ pub mod oauth;
 pub mod refresh;
 pub mod register;
 pub mod login;
-pub mod user_uid;
+pub mod username;

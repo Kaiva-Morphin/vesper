@@ -17,7 +17,7 @@ pub struct RegisterCriteria {
     login_len_min : usize,
     password_len_max : usize,
     password_len_min : usize,
-    username_regex : String,
+    user_uid_regex : String,
     password_regex : String,
     email_regex: String,
 }
@@ -29,7 +29,7 @@ pub async fn get_criteria() -> Json<RegisterCriteria> {
         login_len_min: CFG.MIN_LOGIN_LENGTH,
         password_len_max: CFG.MAX_PASSWORD_LENGTH,
         password_len_min: CFG.MIN_PASSWORD_LENGTH,
-        username_regex: COMPILED_LOGIN_REGEX.to_string(),
+        user_uid_regex: COMPILED_LOGIN_REGEX.to_string(),
         password_regex: COMPILED_PASSWORD_REGEX.to_string(),
         email_regex: COMPILED_EMAIL_REGEX.to_string(),
     })

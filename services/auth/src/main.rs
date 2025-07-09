@@ -4,7 +4,7 @@ use async_nats::jetstream::Context;
 use axum::{
     body::Body, error_handling::HandleErrorLayer, extract::Request, http::StatusCode, response::Response, routing::{get, post}, Router
 };
-use endpoints::{login::login, logout_other::logout_other, recovery_password::{recovery_password, request_password_recovery}, refresh::refresh_tokens, register::{get_criteria, register, request_register_code}, set_refresh_rules::set_refresh_rules, username::check_username};
+use endpoints::{login::login, logout_other::logout_other, recovery_password::{recovery_password, request_password_recovery}, refresh::refresh_tokens, register::{get_criteria, register, request_register_code}, set_refresh_rules::set_refresh_rules, user_uid::check_user_uid};
 use message_broker::publisher::build_publisher;
 use shared::env_config;
 use redis_utils::redis::RedisTokens;
@@ -80,7 +80,7 @@ async fn main() -> Result<()> {
         .route("/set_refresh_rules", post(set_refresh_rules))
         .route("/get_register_criteria", get(get_criteria))
         .route("/logout_other", post(logout_other))
-        .route("/check_username", get(check_username))
+        .route("/check_user_uid", get(check_user_uid))
         .route("/request_register_code", post(request_register_code))
         .route("/register", post(register))
         .route("/login", post(login))

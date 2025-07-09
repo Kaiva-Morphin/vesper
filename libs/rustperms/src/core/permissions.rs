@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::HashMap};
+use std::collections::HashMap;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -44,6 +44,7 @@ impl<T, E> ErrMap<T, E> for Result<T, E>
 // TODO: CUSTOM SERIALIZER
 #[derive(Serialize, Deserialize)] 
 #[derive(Clone, Debug)]
+#[derive(PartialEq, Eq)]
 pub struct PermissionRuleNode {
     children: HashMap<PermissionPart, PermissionRuleNode>,
     enabled: Option<bool>

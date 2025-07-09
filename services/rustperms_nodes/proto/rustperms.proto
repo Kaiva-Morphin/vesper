@@ -4,22 +4,26 @@ package rustperms_manager;
 
 import "google/protobuf/empty.proto";
 
-service MasterNode {
+service RustpermsMasterProto {
     rpc GetSnapshot (google.protobuf.Empty) returns (SnapshotResponse);
+    rpc WriteChanges (WriteRequest) returns (google.protobuf.Empty);
 }
 
+message WriteRequest {
+    string serialized_delta = 1;
+}
 
 message SnapshotResponse {
     string serialized_users = 1;
     string serialized_groups = 2;
 }
 
-service ReplicaNode {
+service RustpermsReplicaProto {
     rpc CheckPerm(CheckPermRequest) returns (CheckPermReply);
 }
 
 message CheckPermRequest {
-   string username = 1;
+   string user_uid = 1;
    string permission = 2;
    bool unset_policy = 3;
 }

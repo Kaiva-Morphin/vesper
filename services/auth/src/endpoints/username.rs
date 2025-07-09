@@ -8,13 +8,13 @@ use anyhow::Result;
 
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct CheckUsername {
-    pub username: String
+pub struct CheckUserUID {
+    pub user_uid: String
 }
 
-pub async fn check_username(
+pub async fn check_user_uid(
     State(state): State<AppState>,
-    Json(CheckUsername{username}): Json<CheckUsername>
+    Json(CheckUserUID{user_uid}): Json<CheckUserUID>
 ) -> Result<Json<bool>, AppErr> {
-    Ok(Json(state.is_login_available(username).await?))
+    Ok(Json(state.is_login_available(user_uid).await?))
 }

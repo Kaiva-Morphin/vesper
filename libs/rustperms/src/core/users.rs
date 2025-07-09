@@ -1,34 +1,34 @@
-use std::{borrow::Borrow, collections::HashSet};
+use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 
+use super::{groups::GroupUID, permissions::{PermissionInterface, PermissionPath, PermissionRuleNode}};
 
-use super::{groups::Groupname, permissions::{PermissionInterface, PermissionPath, PermissionRuleNode}};
-
-pub type Username = String;
+pub type UserUID = String;
 
 #[derive(Serialize, Deserialize)] 
 #[derive(Clone, Debug)]
+#[derive(PartialEq, Eq)]
 pub struct User {
-    pub username: Username,
-    pub groups: HashSet<Groupname>,
+    pub user_uid: UserUID,
+    pub groups: HashSet<GroupUID>,
     pub permissions: PermissionRuleNode,
 }
 
 impl User {
-    pub fn new(username: Username) -> Self {
+    pub fn new(user_uid: UserUID) -> Self {
         Self {
-            username,
+            user_uid,
             groups: HashSet::new(),
             permissions: PermissionRuleNode::new(),
         }
     }
-    pub fn get_username(&self) -> &Username {&self.username}
+    pub fn get_user_uid(&self) -> &UserUID {&self.user_uid}
 
-    pub fn get_groups(&self) -> &HashSet<Groupname> {&self.groups}
-    pub fn has_group(&self, group: &Groupname) -> bool {self.groups.contains(group)}
-    pub fn add_group(&mut self, group: Groupname) {self.groups.insert(group);}
-    pub fn remove_group(&mut self, group: &Groupname) {self.groups.remove(group);}
+    pub fn get_groups(&self) -> &HashSet<GroupUID> {&self.groups}
+    pub fn has_group(&self, group: &GroupUID) -> bool {self.groups.contains(group)}
+    pub fn add_group(&mut self, group: GroupUID) {self.groups.insert(group);}
+    pub fn remove_group(&mut self, group: &GroupUID) {self.groups.remove(group);}
 
     pub fn get_perms(&self) -> &PermissionRuleNode {&self.permissions}
     

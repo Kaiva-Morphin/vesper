@@ -214,7 +214,6 @@ where
     S: Send + Sync,
 {
     type Rejection = StatusCode;
-
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         let p = parts.extract::<Path<HashMap<String, String>>>().await;
         info!("Extractor executed!");

@@ -1,25 +1,26 @@
 syntax = "proto3";
 
-package rustperms_manager;
+package rustperms;
 
 import "google/protobuf/empty.proto";
 
 service RustpermsMasterProto {
-    rpc GetSnapshot (google.protobuf.Empty) returns (SnapshotResponse);
     rpc WriteChanges (WriteRequest) returns (google.protobuf.Empty);
+    rpc GetSnapshot (google.protobuf.Empty) returns (SnapshotResponse);
 }
 
 message WriteRequest {
     string serialized_delta = 1;
 }
 
+service RustpermsReplicaProto {
+    rpc CheckPerm(CheckPermRequest) returns (CheckPermReply);
+    rpc GetSnapshot (google.protobuf.Empty) returns (SnapshotResponse);
+}
+
 message SnapshotResponse {
     string serialized_users = 1;
     string serialized_groups = 2;
-}
-
-service RustpermsReplicaProto {
-    rpc CheckPerm(CheckPermRequest) returns (CheckPermReply);
 }
 
 message CheckPermRequest {

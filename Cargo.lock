@@ -3554,6 +3554,7 @@ dependencies = [
  "anyhow",
  "async-nats 0.42.0",
  "bincode",
+ "futures",
  "layers",
  "prost 0.13.5",
  "prost-types 0.14.1",

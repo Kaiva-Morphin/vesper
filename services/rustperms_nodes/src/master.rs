@@ -1,16 +1,16 @@
-use rustperms::{api::actions::RustpermsDelta, prelude::*};
-use ::shared::env_config;
-use anyhow::Result;
-use tonic::{body::Body, Request, Response};
-use tower_http::catch_panic::CatchPanicLayer;
-use tracing::{info, Span};
+use std::sync::Arc;
 
-use crate::{db::SqlStore, service::master::{rustperms_master::rustperms_master_proto_server::RustpermsMasterProtoServer, MasterNode}};
-mod shared;
+use async_nats::jetstream::Context;
+use ::shared::{env_config, utils::logger::init_logger};
+use anyhow::Result;
+
 mod db;
 mod service;
+mod proto;
+
 use service::master::*;
-use tower::ServiceBuilder;
+
+use crate::{db::SqlStore, proto::rustperms_proto::rustperms_master_proto_server::RustpermsMasterProtoServer};
 
 env_config!(
     ".env" => ENV = Env {
@@ -24,28 +24,36 @@ env_config!(
 
 // TODO: INACTIVE MASTER REPLICA FOR REPLACEMENT
 
+
+pub async fn build_publisher() -> Result<Context> {
+    let nats_url = format!("nats://{}:{}", ENV.NATS_URL, ENV.NATS_PORT);
+    let client = async_nats::connect(nats_url).await?;
+    Ok(async_nats::jetstream::new(client))
+}
+
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    let subscriber = tracing_subscriber::layer::SubscriberExt::with(tracing_subscriber::registry(), tracing_subscriber::fmt::layer());
-    tracing::subscriber::set_global_default(subscriber).ok();
+    init_logger();
+
 
     let addr = format!("[::1]:{}", ENV.RUSTPERMS_MASTER_PORT).parse()?;
-    // // connect to bd
+    // connect to bd
     let storage = db::PostgreStorage::connect(&ENV.DATABASE_URL).await?;
-    // fetch state
     storage.init_schema().await?;
+
+    let nats_publisher = Arc::new(build_publisher().await?);
+    // fetch state
     let manager = storage.load_manager().await?;
 
-
+    tracing::info!("Starting master node!");
     // start grpc listener
     tonic::transport::Server::builder()
-        .add_service(RustpermsMasterProtoServer::new(MasterNode{manager, storage}))
+        .add_service(RustpermsMasterProtoServer::new(MasterNode{manager, storage, nats_publisher}))
         .serve(addr)
         .await?;
     Ok(())
-    
 }
-
 
 // pub async fn logging_middleware(mut req: Request<Body>, next: Next) -> Response {
 //     let span = Span::current();

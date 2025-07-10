@@ -1,3 +1,8 @@
+use rustperms::prelude::*;
+use shared::env_config;
+
+use crate::db::{PostgreStorage, ReflectedApply, SqlStore};
+mod db;
 
 env_config!(
     ".env" => ENV = Env {
@@ -150,3 +155,6 @@ async fn test_remove_user_from_group() -> anyhow::Result<()> {
     assert!(!manager.groups.read().await.get("admin").unwrap().has_member(&"alice".into()));
     Ok(())
 }
+
+
+fn main(){}

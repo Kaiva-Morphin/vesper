@@ -55,6 +55,23 @@ impl Default for PermissionRuleNode {
         Self::new()
     }
 }
+#[repr(u8)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Copy, Clone)]
+pub enum MatchType {
+    Wildcard,
+    Any,
+    Exact,
+}
+
+impl MatchType {
+    pub fn higher(self, other: Self) -> Self {
+        match self {
+            MatchType::Wildcard => self,
+            MatchType::Any => if let MatchType::Exact = other {self} else {other} 
+            MatchType::Exact => other
+        }
+    }
+}
 
 impl PermissionRuleNode {
     pub fn new() -> Self {
@@ -85,13 +102,16 @@ impl PermissionRuleNode {
         }
         current.enabled = Some(enabled);
     }
-    pub fn get(&self, path: &PermissionPath) -> Option<bool> {
+    pub fn get(&self, path: &PermissionPath) -> Option<(bool, MatchType)> {
         fn rec<'a>(
             node: &PermissionRuleNode,
             mut path: impl Iterator<Item = &'a PermissionPart> + Clone,
-        ) -> Option<bool> {
+        ) -> Option<(bool, MatchType)> {
             let Some(current) = path.next() else {
-                return node.enabled;
+                if let Some(e) = node.enabled {
+                    return Some((e, MatchType::Exact));
+                }
+                return  None;
             };
 
             // Exact match
@@ -104,7 +124,7 @@ impl PermissionRuleNode {
             // ? matches exactly one part
             if let Some(child) = node.children.get("?") {
                 if let Some(result) = rec(child, path.clone()) {
-                    return Some(result);
+                    return Some((result.0, result.1.higher(MatchType::Any)));
                 }
             }
 
@@ -114,7 +134,7 @@ impl PermissionRuleNode {
                 let mut next = Some(current);
                 while next.is_some() {
                     if let Some(result) = rec(child, tail.clone()) {
-                        return Some(result);
+                        return Some((result.0, MatchType::Wildcard));
                     }
                     next = tail.next();
                 };
@@ -164,144 +184,149 @@ pub trait PermissionInterface {
     fn set_perms(&mut self, perms: Vec<PermissionRule>);
     fn remove_perm(&mut self, path: &PermissionPath);
     fn remove_perms(&mut self, perms: Vec<PermissionPath>);
-    fn get_perm(&self, path: &PermissionPath) -> Option<bool>;
+    fn get_perm(&self, path: &PermissionPath) -> Option<(bool, MatchType)>;
     fn get_perms(&self) -> &PermissionRuleNode;
     fn get_records(&self) -> Vec<PermissionPath> {self.get_perms().get_records()}
     fn merge(&mut self, other: Self);
 }
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio;
+        
+    #[test]
+    fn test_perm_path() {
+        assert_eq!(PermissionPath::from_str("a.b.c"), ["a", "b", "c"].into());
+        assert_eq!(PermissionPath::from_str("a.b.c.d"), ["a", "b", "c", "d"].into());
+        assert_eq!(PermissionPath::from_str("a.b.c.d.e"), ["a", "b", "c", "d", "e"].into());
+    }
+    #[test]
+    fn test_perm_path_format() {
+        assert_eq!(PermissionPath::from_str("a.b.c").format(), "a.b.c");
+        assert_eq!(PermissionPath::from_str("a.b.c.d").format(), "a.b.c.d");
+        assert_eq!(PermissionPath::from_str("a.b.c.d.e").format(), "a.b.c.d.e");
+    }
 
-#[test]
-fn test_perm_path() {
-    assert_eq!(PermissionPath::from_str("a.b.c"), ["a", "b", "c"].into());
-    assert_eq!(PermissionPath::from_str("a.b.c.d"), ["a", "b", "c", "d"].into());
-    assert_eq!(PermissionPath::from_str("a.b.c.d.e"), ["a", "b", "c", "d", "e"].into());
-}
-#[test]
-fn test_perm_path_format() {
-    assert_eq!(PermissionPath::from_str("a.b.c").format(), "a.b.c");
-    assert_eq!(PermissionPath::from_str("a.b.c.d").format(), "a.b.c.d");
-    assert_eq!(PermissionPath::from_str("a.b.c.d.e").format(), "a.b.c.d.e");
-}
-
-#[test]
-fn test_set() {
-    let mut tree = PermissionRuleNode::new();
-    let p1 = PermissionPath::from_str("a.b.c");
-    tree.set(p1.clone(), true);
-    assert_eq!(tree.get(&p1), Some(true));
-    tree.set(p1.clone(), false);
-    assert_eq!(tree.get(&p1), Some(false));
-}
-
-
-#[test]
-fn test_remove() {
-    let mut tree = PermissionRuleNode::new();
-    let p1 = PermissionPath::from_str("a.b.c");
-    tree.set(p1.clone(), true);
-    tree.remove(&p1);
-    assert_eq!(tree.get(&p1), None);
-}
-
-#[test]
-fn test_any_at_beginning() {
-    let mut tree = PermissionRuleNode::new();
-    tree.set(PermissionPath::from_str("?.b.c"), true);
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("a.a.b.c")), None);
-}
-
-#[test]
-fn test_any_in_middle() {
-    let mut tree = PermissionRuleNode::new();
-    tree.set(PermissionPath::from_str("a.?.c"), true);
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.b.c")), None);
-}
-
-#[test]
-fn test_any_at_end() {
-    let mut tree = PermissionRuleNode::new();
-    tree.set(PermissionPath::from_str("a.b.?"), true);
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.c.d")), None);
-}
+    #[test]
+    fn test_set() {
+        let mut tree = PermissionRuleNode::new();
+        let p1 = PermissionPath::from_str("a.b.c");
+        tree.set(p1.clone(), true);
+        assert_eq!(tree.get(&p1), Some((true, MatchType::Exact)));
+        tree.set(p1.clone(), false);
+        assert_eq!(tree.get(&p1), Some((false, MatchType::Exact)));
+    }
 
 
-#[test]
-fn test_wildcard_root() {
-    let mut tree = PermissionRuleNode::new();
-    tree.set(PermissionPath::from_str("*"), true);
-    assert_eq!(tree.get(&PermissionPath::from_str("x")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("x.y")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("x.y.z")), Some(true));
-}
+    #[test]
+    fn test_remove() {
+        let mut tree = PermissionRuleNode::new();
+        let p1 = PermissionPath::from_str("a.b.c");
+        tree.set(p1.clone(), true);
+        tree.remove(&p1);
+        assert_eq!(tree.get(&p1), None);
+    }
 
-#[test]
-fn test_wildcard_at_beginning() {
-    let mut tree = PermissionRuleNode::new();
-    tree.set(PermissionPath::from_str("*.b.c"), true);
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("x.y.b.c")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("b.c")), None);
-}
+    #[test]
+    fn test_any_at_beginning() {
+        let mut tree = PermissionRuleNode::new();
+        tree.set(PermissionPath::from_str("?.b.c"), true);
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some((true, MatchType::Any)));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.a.b.c")), None);
+    }
 
-#[test]
-fn test_wildcard_in_middle() {
-    let mut tree = PermissionRuleNode::new();
-    tree.set(PermissionPath::from_str("a.*.d"), true);
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.c.d")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.d")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("a.d")), None);
-}
+    #[test]
+    fn test_any_in_middle() {
+        let mut tree = PermissionRuleNode::new();
+        tree.set(PermissionPath::from_str("a.?.c"), true);
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some((true, MatchType::Any)));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.b.c")), None);
+    }
 
-#[test]
-fn test_wildcard_at_end() {
-    let mut tree = PermissionRuleNode::new();
-    tree.set(PermissionPath::from_str("a.b.*"), true);
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b.c.d")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("a.b")), None);
-}
+    #[test]
+    fn test_any_at_end() {
+        let mut tree = PermissionRuleNode::new();
+        tree.set(PermissionPath::from_str("a.b.?"), true);
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some((true, MatchType::Any)));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c.d")), None);
+    }
 
-#[test]
-fn test_wildcards() {
-    let mut tree = PermissionRuleNode::new();
-    tree.set(PermissionPath::from_str("a.*.c.?.e"), true);
-    assert_eq!(tree.get(&PermissionPath::from_str("a.x.y.c.z.e")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("a.x.c.z.e")), Some(true));
-    assert_eq!(tree.get(&PermissionPath::from_str("a.c.z.e")), None);
-    assert_eq!(tree.get(&PermissionPath::from_str("a.x.y.c.z.q.e")), None);
-}
 
-#[test]
-fn test_merge_trees() {
-    let mut base = PermissionRuleNode::new();
-    let mut other = PermissionRuleNode::new();
+    #[test]
+    fn test_wildcard_root() {
+        let mut tree = PermissionRuleNode::new();
+        tree.set(PermissionPath::from_str("*"), true);
+        assert_eq!(tree.get(&PermissionPath::from_str("x")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("x.y")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("x.y.z")), Some((true, MatchType::Wildcard)));
+    }
 
-    base.set(PermissionPath::from_str("a.b.c"), true);
+    #[test]
+    fn test_wildcard_at_beginning() {
+        let mut tree = PermissionRuleNode::new();
+        tree.set(PermissionPath::from_str("*.b.c"), true);
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("x.y.b.c")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("b.c")), None);
+    }
 
-    other.set(PermissionPath::from_str("a.b.c"), false);
+    #[test]
+    fn test_wildcard_in_middle() {
+        let mut tree = PermissionRuleNode::new();
+        tree.set(PermissionPath::from_str("a.*.d"), true);
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c.d")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.d")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.d")), None);
+    }
 
-    other.set(PermissionPath::from_str("a.x"), true);
+    #[test]
+    fn test_wildcard_at_end() {
+        let mut tree = PermissionRuleNode::new();
+        tree.set(PermissionPath::from_str("a.b.*"), true);
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c.d")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b")), None);
+    }
 
-    base.merge(other);
+    #[test]
+    fn test_wildcards() {
+        let mut tree = PermissionRuleNode::new();
+        tree.set(PermissionPath::from_str("a.*.c.?.e"), true);
+        assert_eq!(tree.get(&PermissionPath::from_str("a.x.y.c.z.e")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.x.c.z.e")), Some((true, MatchType::Wildcard)));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.c.z.e")), None);
+        assert_eq!(tree.get(&PermissionPath::from_str("a.x.y.c.z.q.e")), None);
+    }
 
-    assert_eq!(base.get(&PermissionPath::from_str("a.b.c")), Some(false));
-    assert_eq!(base.get(&PermissionPath::from_str("a.x")), Some(true));
-}
+    #[test]
+    fn test_merge_trees() {
+        let mut base = PermissionRuleNode::new();
+        let mut other = PermissionRuleNode::new();
 
-#[test]
-fn test_merge_nested_wildcards() {
-    let mut base = PermissionRuleNode::new();
-    let mut other = PermissionRuleNode::new();
+        base.set(PermissionPath::from_str("a.b.c"), true);
 
-    base.set(PermissionPath::from_str("a.*.c"), true);
-    other.set(PermissionPath::from_str("a.*.c"), false);
+        other.set(PermissionPath::from_str("a.b.c"), false);
 
-    base.merge(other);
+        other.set(PermissionPath::from_str("a.x"), true);
 
-    assert_eq!(base.get(&PermissionPath::from_str("a.b.c")), Some(false));
+        base.merge(other);
+
+        assert_eq!(base.get(&PermissionPath::from_str("a.b.c")), Some((false, MatchType::Exact)));
+        assert_eq!(base.get(&PermissionPath::from_str("a.x")), Some((true, MatchType::Exact)));
+    }
+
+    #[test]
+    fn test_merge_nested_wildcards() {
+        let mut base = PermissionRuleNode::new();
+        let mut other = PermissionRuleNode::new();
+
+        base.set(PermissionPath::from_str("a.*.c"), true);
+        other.set(PermissionPath::from_str("a.*.c"), false);
+
+        base.merge(other);
+
+        assert_eq!(base.get(&PermissionPath::from_str("a.b.c")), Some((false, MatchType::Wildcard)));
+    }
 }

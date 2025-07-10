@@ -2,6 +2,8 @@ use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 
+use crate::prelude::MatchType;
+
 use super::{groups::GroupUID, permissions::{PermissionInterface, PermissionPath, PermissionRuleNode}};
 
 pub type UserUID = String;
@@ -14,6 +16,8 @@ pub struct User {
     pub groups: HashSet<GroupUID>,
     pub permissions: PermissionRuleNode,
 }
+
+pub const RUSTPERMS_USER_WEIGHT : i32 = 1000;
 
 impl User {
     pub fn new(user_uid: UserUID) -> Self {
@@ -47,7 +51,7 @@ impl PermissionInterface for User {
             self.remove_perm(&path);
         }
     }
-    fn get_perm(&self, path: &PermissionPath) -> Option<bool> {self.permissions.get(path)}
+    fn get_perm(&self, path: &PermissionPath) -> Option<(bool, MatchType)> {self.permissions.get(path)}
     fn get_perms(&self) -> &PermissionRuleNode {&self.permissions}
     fn merge(&mut self, other: Self) {self.permissions.merge(other.permissions);}
 }

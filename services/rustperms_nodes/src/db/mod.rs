@@ -2,7 +2,7 @@ pub mod models;
 use std::collections::HashMap;
 
 use rustperms::{api::actions::{RustpermsDelta, RustpermsOperation}, prelude::{AsyncManager, PermPath, PermissionPart, PermissionPath}};
-use sqlx::{postgres::PgPoolOptions, prelude::FromRow, Executor, IntoArguments, PgExecutor, Pool, Postgres, Transaction, Type};
+use sqlx::{postgres::PgPoolOptions, prelude::FromRow, Connection, Executor, IntoArguments, PgConnection, PgExecutor, Pool, Postgres, Transaction, Type};
 use anyhow::Result;
 use tokio::sync::RwLock;
 use tonic::async_trait;
@@ -21,6 +21,13 @@ impl PostgreStorage {
     pub async fn connect(database: &str) -> Result<Self> {
         let conn: Pool<Postgres> = PgPoolOptions::new()
             .max_connections(8)
+            .connect(database).await?;
+        Ok(Self{conn})
+    }
+
+    pub async fn single_connection(database: &str) -> Result<Self> {
+        let conn: Pool<Postgres> = PgPoolOptions::new()
+            .max_connections(1)
             .connect(database).await?;
         Ok(Self{conn})
     }
@@ -208,6 +215,7 @@ where
         let tx: Transaction<'_, Postgres> = self.conn.begin().await?;
         Ok(tx)
     }
+
     async fn init_schema(&self) -> anyhow::Result<()> {
         sqlx::raw_sql(USER_SCHEMA).execute(&self.conn).await?;
         sqlx::raw_sql(GROUP_SCHEMA).execute(&self.conn).await?;
@@ -269,7 +277,7 @@ impl ReflectedApply<PostgreStorage> for AsyncManager {
         let mut groups = self.groups.write().await;
         let mut tx = storage.begin_tx()
             .await
-            .inspect_err(|e| error!("Can't begin transaction: {:?}", e))?; // todo: delay writes.
+            .inspect_err(|e| error!("Can't begin transaction: {:?}", e))?; // todo: delay writes?
         for action in actions.into_iter() {
             if AsyncManager::apply_action(&mut users, &mut groups, action.clone()) {
                 storage.sql_query(action, &mut *tx).await
@@ -279,7 +287,7 @@ impl ReflectedApply<PostgreStorage> for AsyncManager {
         }
         tx.commit().await
             .inspect_err(|e| error!("Can't commit changes to db: {:?}", e))
-            .ok(); // todo: delay writes if errors.
+            .ok();
         Ok(())
     }
 }

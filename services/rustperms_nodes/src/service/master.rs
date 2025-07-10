@@ -1,24 +1,37 @@
-use std::marker::PhantomData;
+use std::fmt::Display;
+use std::sync::Arc;
 
+use async_nats::jetstream::Context;
 use rustperms::prelude::{AsyncManager, RustpermsDelta};
 use tonic::{Request, Response, Status};
 use anyhow::Result;
-pub mod rustperms_master {
-    tonic::include_proto!("rustperms_manager");
-}
+
 use crate::db::{PostgreStorage, ReflectedApply, SqlStore};
-use crate::rustperms_master::rustperms_master_proto_server::RustpermsMasterProto;
-use crate::service::master::rustperms_master::{SnapshotResponse, WriteRequest};
+use crate::proto::rustperms_proto::rustperms_master_proto_server::RustpermsMasterProto;
+use crate::proto::rustperms_proto::{SnapshotResponse, WriteRequest};
+use crate::ENV;
 
 #[derive(Debug)]
-pub struct MasterNode<T> {
+pub struct MasterNode<T : SqlStore> {
     pub manager: AsyncManager,
     pub storage: T,
+    pub nats_publisher: Arc<Context>
 }
 
 
 #[tonic::async_trait]
 impl RustpermsMasterProto for MasterNode<PostgreStorage> {
+    async fn write_changes(
+        &self,
+        request: Request<WriteRequest>,
+    ) -> Result<Response<()>, Status> {
+        let WriteRequest{serialized_delta} = request.into_inner();
+        let delta = RustpermsDelta::deserialize_from_string(&serialized_delta).map_status(Status::internal(""))?;
+        self.manager.reflected_apply(&self.storage, delta).await.map_status(Status::internal(""))?;
+        // todo!: revert changes on error
+        self.nats_publisher.publish(ENV.PERM_WRITE_NATS_EVENT.clone(), serialized_delta.into()).await.map_status(Status::internal("Can't send nats event! The changes applied to db will not be reflected on replicas!"))?;
+        Ok(Response::new(()))
+    }
     async fn get_snapshot(
         &self,
         _request: Request<()>,
@@ -29,21 +42,13 @@ impl RustpermsMasterProto for MasterNode<PostgreStorage> {
         };
         Ok(Response::new(reply))
     }
-    async fn write_changes(
-        &self,
-        request: Request<WriteRequest>,
-    ) -> Result<Response<()>, Status> {
-        let WriteRequest{serialized_delta} = request.into_inner();
-        let delta = RustpermsDelta::deserialize_from_string(&serialized_delta).map_status(Status::internal(""))?;
-        self.manager.reflected_apply(&self.storage, delta).await.map_status(Status::internal(""))?;
-        Ok(Response::new(()))
-    }
 }
+
 pub trait MapStatus<T> {
     fn map_status(self, status: Status) -> Result<T, Status>;
 }
 
-impl<T> MapStatus<T> for anyhow::Result<T, anyhow::Error> 
+impl<T, E : Display> MapStatus<T> for anyhow::Result<T, E> 
 {
     fn map_status(self, status: Status) -> Result<T, Status> {
         match self {

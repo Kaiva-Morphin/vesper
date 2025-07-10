@@ -7,15 +7,15 @@ use tonic::{Request, Response, Status};
 use anyhow::Result;
 
 use crate::db::{PostgreStorage, ReflectedApply, SqlStore};
-use crate::proto::rustperms_proto::rustperms_master_proto_server::RustpermsMasterProto;
-use crate::proto::rustperms_proto::{SnapshotResponse, WriteRequest};
-use crate::ENV;
+use crate::proto::rustperms_master_proto_server::RustpermsMasterProto;
+use crate::proto::{SnapshotResponse, WriteRequest};
 
 #[derive(Debug)]
 pub struct MasterNode<T : SqlStore> {
     pub manager: AsyncManager,
     pub storage: T,
-    pub nats_publisher: Arc<Context>
+    pub nats_publisher: Arc<Context>,
+    pub nats_event: String
 }
 
 
@@ -29,7 +29,7 @@ impl RustpermsMasterProto for MasterNode<PostgreStorage> {
         let delta = RustpermsDelta::deserialize_from_string(&serialized_delta).map_status(Status::internal(""))?;
         self.manager.reflected_apply(&self.storage, delta).await.map_status(Status::internal(""))?;
         // todo!: revert changes on error
-        self.nats_publisher.publish(ENV.PERM_WRITE_NATS_EVENT.clone(), serialized_delta.into()).await.map_status(Status::internal("Can't send nats event! The changes applied to db will not be reflected on replicas!"))?;
+        self.nats_publisher.publish(self.nats_event.clone(), serialized_delta.into()).await.map_status(Status::internal("Can't send nats event! The changes applied to db will not be reflected on replicas!"))?;
         Ok(Response::new(()))
     }
     async fn get_snapshot(

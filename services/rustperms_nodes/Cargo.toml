@@ -18,7 +18,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 tonic = "0.13.1"
 tower.workspace = true
-layers = { version = "0.1.0", path = "../../libs/layers" }
+# layers = { version = "0.1.0", path = "../../libs/layers" }
 tower-http.workspace = true
 futures = { version = "0.3.31", features = ["std"] }
 

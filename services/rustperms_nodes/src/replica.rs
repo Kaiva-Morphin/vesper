@@ -5,15 +5,15 @@ use async_nats::jetstream;
 use rustperms::prelude::{AsyncManager, PermPath, PermissionPath, RustpermsDelta, RustpermsOperation};
 use ::shared::{env_config, utils::logger::init_logger};
 
-mod db;
-mod service;
-mod proto;
-
 use anyhow::Result;
 use sqlx::types::Uuid;
 
-use crate::proto::rustperms_proto::rustperms_replica_proto_server::RustpermsReplicaProtoServer;
-use crate::proto::rustperms_proto::{rustperms_master_proto_client::RustpermsMasterProtoClient, rustperms_replica_proto_client::RustpermsReplicaProtoClient, SnapshotResponse};
+mod service;
+mod db;
+mod proto;
+
+use crate::proto::rustperms_replica_proto_server::RustpermsReplicaProtoServer;
+use crate::proto::{rustperms_master_proto_client::RustpermsMasterProtoClient, rustperms_replica_proto_client::RustpermsReplicaProtoClient, SnapshotResponse};
 use crate::db::SqlStore;
 use crate::service::replica::{start_nats_event_listener, ReplicaNode};
 
@@ -80,11 +80,12 @@ async fn main() -> Result<()> {
     tracing::info!("Manager loaded!");
 
     // start nats event listener
+    let nats_url = format!("nats://{}:{}", ENV.NATS_URL, ENV.NATS_PORT);
     
 
     let manager_clone = manager.clone();
     tokio::spawn(async move {
-        let result = start_nats_event_listener(manager_clone).await;
+        let result = start_nats_event_listener(manager_clone, nats_url, ENV.PERM_WRITE_NATS_EVENT.clone()).await;
         if let Err(e) = result {
             tracing::error!("NATS consumer failed: {e}");
             std::process::exit(1);

@@ -4,13 +4,12 @@ use async_nats::jetstream::Context;
 use ::shared::{env_config, utils::logger::init_logger};
 use anyhow::Result;
 
-mod db;
 mod service;
+mod db;
 mod proto;
 
-use service::master::*;
-
-use crate::{db::SqlStore, proto::rustperms_proto::rustperms_master_proto_server::RustpermsMasterProtoServer};
+use crate::service::master::*;
+use crate::{db::SqlStore, proto::rustperms_master_proto_server::RustpermsMasterProtoServer};
 
 env_config!(
     ".env" => ENV = Env {
@@ -43,13 +42,14 @@ async fn main() -> Result<()> {
     storage.init_schema().await?;
 
     let nats_publisher = Arc::new(build_publisher().await?);
+    let nats_event = ENV.PERM_WRITE_NATS_EVENT.clone();
     // fetch state
     let manager = storage.load_manager().await?;
 
     tracing::info!("Starting master node!");
     // start grpc listener
     tonic::transport::Server::builder()
-        .add_service(RustpermsMasterProtoServer::new(MasterNode{manager, storage, nats_publisher}))
+        .add_service(RustpermsMasterProtoServer::new(MasterNode{manager, storage, nats_publisher, nats_event}))
         .serve(addr)
         .await?;
     Ok(())

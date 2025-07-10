@@ -1,3 +1,1 @@
-pub mod rustperms_proto {
-    tonic::include_proto!("rustperms");
-}
+tonic::include_proto!("rustperms");

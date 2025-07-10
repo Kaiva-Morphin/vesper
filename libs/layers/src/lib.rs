@@ -2,6 +2,7 @@ use shared::env_config;
 
 pub mod auth;
 pub mod logging;
+pub mod rustperms;
 
 pub use uuid;
 pub use tracing;

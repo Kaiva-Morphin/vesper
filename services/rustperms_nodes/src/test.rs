@@ -1,8 +1,9 @@
 use rustperms::prelude::*;
 use shared::env_config;
 
-use crate::db::{PostgreStorage, ReflectedApply, SqlStore};
 mod db;
+
+use crate::db::{PostgreStorage, ReflectedApply, SqlStore};
 
 env_config!(
     ".env" => ENV = Env {

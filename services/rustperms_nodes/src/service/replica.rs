@@ -1,15 +1,13 @@
 use std::sync::Arc;
 
 use async_nats::jetstream;
-use async_nats::jetstream::consumer::Consumer;
 use rustperms::prelude::AsyncManager;
 use tonic::{Request, Response, Status};
 
-use crate::proto::rustperms_proto::{rustperms_replica_proto_server::RustpermsReplicaProto};
-use crate::proto::rustperms_proto::SnapshotResponse;
-use crate::proto::rustperms_proto::CheckPermRequest;
-use crate::proto::rustperms_proto::CheckPermReply;
-use crate::ENV;
+use crate::proto::{rustperms_replica_proto_server::RustpermsReplicaProto};
+use crate::proto::SnapshotResponse;
+use crate::proto::CheckPermRequest;
+use crate::proto::CheckPermReply;
 use rustperms::prelude::*;
 
 #[derive(Debug)]
@@ -42,15 +40,14 @@ use anyhow::{anyhow, Result};
 use futures::{StreamExt};
 use std::{str::from_utf8};
 
-pub async fn start_nats_event_listener(manager: Arc<AsyncManager>) -> Result<(), async_nats::Error> {
-    let nats_url = format!("nats://{}:{}", ENV.NATS_URL, ENV.NATS_PORT);
+pub async fn start_nats_event_listener(manager: Arc<AsyncManager>, nats_url: String, event: String) -> Result<(), async_nats::Error> {
     let client = async_nats::connect(nats_url).await?;
     let inbox = client.new_inbox();
     let jetstream = jetstream::new(client);
     let stream = jetstream
         .get_or_create_stream(jetstream::stream::Config {
             name: "PERM_WRITE_NATS_EVENT".to_string(),
-            subjects: vec![ENV.PERM_WRITE_NATS_EVENT.clone()],
+            subjects: vec![event],
             ..Default::default()
         })
         .await?;

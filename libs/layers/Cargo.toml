@@ -11,8 +11,10 @@ once_cell = "1.21.0"
 postgre_entities.workspace = true
 redis_utils.workspace = true
 regex.workspace = true
+rustperms_nodes = { version = "0.1.0", path = "../../services/rustperms_nodes" }
 sea-orm.workspace = true
 shared.workspace = true
+tonic = "0.13.1"
 tower.workspace = true
 tracing.workspace = true
 uuid = { workspace = true, features = ["v4"] }

@@ -1,9 +1,7 @@
-use axum::{body::Body, response::IntoResponse, Json};
+use axum::{body::Body, response::IntoResponse};
 //use axum_extra::extract::CookieJar;
-use chrono::Utc;
-use jsonwebtoken::{decode, encode, errors::Error, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use once_cell::sync::Lazy;
-use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use anyhow::Result;
@@ -16,9 +14,6 @@ use include_bytes_plus::include_bytes;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AccessTokenPayload {
     pub user: Uuid,
-    pub perm_containers: String,
-    pub perms: String,
-    pub wildcards: String,
     pub exp: i64
 }
 
@@ -137,6 +132,11 @@ impl TokenEncoder {
     pub fn decode_access(token: String) -> Option<AccessTokenPayload> {
         let token = decode::<AccessTokenPayload>(&token, &PUBLIC_DECODING_KEY, &Validation::new(ALGORITHM)).ok()?;
         Some(token.claims)
+    }
+
+    pub fn encode_timestamp(timestamp: i64) -> Result<String> {
+        let encoded = encode(&Header::new(ALGORITHM), &timestamp, &PRIVATE_ENCODING_KEY)?;
+        Ok(encoded)
     }
 }
 

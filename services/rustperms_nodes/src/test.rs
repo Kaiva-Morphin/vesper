@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use rustperms::prelude::*;
 use shared::env_config;
 
@@ -7,7 +9,7 @@ use crate::db::{PostgreStorage, ReflectedApply, SqlStore};
 
 env_config!(
     ".env" => ENV = Env {
-        DATABASE_URL : String
+        TEST_DATABASE_URL : String
     }
 );
 
@@ -34,7 +36,7 @@ pub async fn run_rustperms_test(manager: &AsyncManager, storage: &PostgreStorage
 
 #[tokio::test]
 async fn test_user_create_and_assign() -> anyhow::Result<()> {
-    let storage = db::PostgreStorage::connect(&ENV.DATABASE_URL).await?;
+    let storage = db::PostgreStorage::connect(&ENV.TEST_DATABASE_URL).await?;
     storage.drop_tables().await.ok();
     storage.init_schema().await?;
 
@@ -61,7 +63,7 @@ async fn test_user_create_and_assign() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_user_create_remove() -> anyhow::Result<()> {
-    let storage = db::PostgreStorage::connect(&ENV.DATABASE_URL).await?;
+    let storage = db::PostgreStorage::connect(&ENV.TEST_DATABASE_URL).await?;
     storage.drop_tables().await.ok();
     storage.init_schema().await?;
 
@@ -78,7 +80,7 @@ async fn test_user_create_remove() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_group_create_and_weight_update() -> anyhow::Result<()> {
-    let storage = db::PostgreStorage::connect(&ENV.DATABASE_URL).await?;
+    let storage = db::PostgreStorage::connect(&ENV.TEST_DATABASE_URL).await?;
     storage.drop_tables().await.ok();
     storage.init_schema().await?;
 
@@ -97,7 +99,7 @@ async fn test_group_create_and_weight_update() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_group_permission_modification() -> anyhow::Result<()> {
-    let storage = db::PostgreStorage::connect(&ENV.DATABASE_URL).await?;
+    let storage = db::PostgreStorage::connect(&ENV.TEST_DATABASE_URL).await?;
     storage.drop_tables().await.ok();
     storage.init_schema().await?;
 
@@ -118,7 +120,7 @@ async fn test_group_permission_modification() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_group_hierarchy() -> anyhow::Result<()> {
-    let storage = db::PostgreStorage::connect(&ENV.DATABASE_URL).await?;
+    let storage = db::PostgreStorage::connect(&ENV.TEST_DATABASE_URL).await?;
     storage.drop_tables().await.ok();
     storage.init_schema().await?;
 
@@ -140,7 +142,7 @@ async fn test_group_hierarchy() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn test_remove_user_from_group() -> anyhow::Result<()> {
-    let storage = db::PostgreStorage::connect(&ENV.DATABASE_URL).await?;
+    let storage = db::PostgreStorage::connect(&ENV.TEST_DATABASE_URL).await?;
     storage.drop_tables().await.ok();
     storage.init_schema().await?;
 
@@ -157,5 +159,3 @@ async fn test_remove_user_from_group() -> anyhow::Result<()> {
     Ok(())
 }
 
-
-fn main(){}

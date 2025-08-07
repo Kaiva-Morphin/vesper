@@ -7,7 +7,7 @@ edition = "2024"
 r2d2 = "0.8.10"
 redis = { version = "0.28.2", features = ["r2d2", "tokio-comp", "ahash", "json"] }
 uuid.workspace = true
-shared.workspace = true
+shared = { workspace = true, features = ["jwt"] }
 tracing.workspace = true
 reqwest.workspace = true
 chrono.workspace = true

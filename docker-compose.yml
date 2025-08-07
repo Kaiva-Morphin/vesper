@@ -18,6 +18,33 @@ services:
   #     timeout: 5s
   #     retries: 5
 
+  rustperms_master:
+    build:
+      context: .
+      dockerfile: services/rustperms_nodes/Dockerfile.master
+    env_file:
+      - ".env"
+    ports:
+      - "${RUSTPERMS_MASTER_PORT}:${RUSTPERMS_MASTER_PORT}"
+    depends_on:
+      - postgre
+      - nats
+    restart: always
+  
+  rustperms_replica:
+    build:
+      context: .
+      dockerfile: services/rustperms_nodes/Dockerfile.replica
+    env_file:
+      - ".env"
+    ports:
+      - "${RUSTPERMS_REPLICA_PORT}:${RUSTPERMS_REPLICA_PORT}"
+    depends_on:
+      - postgre
+      - nats
+      - rustperms_master
+    restart: always
+
   dragonfly:
     env_file:
       - ".cfg"
@@ -41,7 +68,7 @@ services:
     volumes:
       - ./dbs/init_postgre.sql:/docker-entrypoint-initdb.d/init.sql
       - ./dbs/postgre-data:/var/lib/postgresql/data
-  
+    
   # redis:
   #   env_file:
   #     - ".cfg"
@@ -73,13 +100,27 @@ services:
     volumes:
       - redisinsight-data:/root/.redisinsight
     restart: always
-  # nginx:
-  #   image: nginx:latest
-  #   container_name: nginx
-  #   volumes:
-  #     - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
-  #   ports:
-  #     - "80:80"
+  
+  minio:
+    image: minio/minio # image: minio/minio:RELEASE.2025-04-03T14-56-28Z-cpuv1 # FOR LOW-END CPUs
+    restart: always
+    env_file:
+      - ".cfg"
+      - ".env"
+    environment:
+      MINIO_HOST: "http://minio:9000"
+    entrypoint: ["/bin/sh", "/data/init.sh"]
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./dbs/minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/live"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+  
 volumes:
   redisinsight-data:
   # yb_data:

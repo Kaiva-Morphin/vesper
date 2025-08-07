@@ -1,4 +1,4 @@
-use axum::{extract::State, Json};
+use axum::{extract::{Query, State}, Json};
 use serde::{Deserialize, Serialize};
 use shared::utils::app_err::AppErr;
 
@@ -12,9 +12,10 @@ pub struct CheckUserUID {
     pub user_uid: String
 }
 
+// todo: all usernames in redis?
 pub async fn check_user_uid(
     State(state): State<AppState>,
-    Json(CheckUserUID{user_uid}): Json<CheckUserUID>
+    Query(params): Query<CheckUserUID>,
 ) -> Result<Json<bool>, AppErr> {
-    Ok(Json(state.is_login_available(user_uid).await?))
+    Ok(Json(state.is_uid_available(params.user_uid.to_lowercase()).await?))
 }

@@ -3,7 +3,7 @@ use axum_extra::extract::CookieJar;
 use crate::CFG;
 
 
-const COOKIE_REFRESH_TOKEN : &'static str = "REFRESH_TOKEN";
+const COOKIE_REFRESH_TOKEN : &str = "REFRESH_TOKEN";
 
 pub trait TokenCookie {
     fn put_refresh(self, token: String) -> Self;
@@ -18,7 +18,7 @@ impl TokenCookie for CookieJar {
         refresh.set_same_site(SameSite::Strict);
         refresh.set_http_only(true);
         refresh.set_max_age(Duration::seconds(CFG.REFRESH_TOKEN_LIFETIME as i64));
-        //todo: refresh.set_path("/api/auth");
+        refresh.set_path("/api/auth");
         //todo: refresh.set_domain("kaiv.space");
         self.add(refresh)
     }

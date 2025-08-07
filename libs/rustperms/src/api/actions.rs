@@ -1,5 +1,3 @@
-use std::{collections::HashMap, fmt::format};
-
 use base64::{prelude::BASE64_URL_SAFE_NO_PAD, Engine};
 use bincode::serde::{decode_from_slice, encode_to_vec};
 use serde::{Deserialize, Serialize};
@@ -19,6 +17,12 @@ impl IntoIterator for RustpermsDelta {
     type IntoIter = std::vec::IntoIter<RustpermsOperation>;
     fn into_iter(self) -> Self::IntoIter {
         self.ops.into_iter()
+    }
+}
+
+impl Default for RustpermsDelta {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -65,7 +69,9 @@ pub enum RustpermsOperation {
     GroupUpdatePerms(GroupUID, Vec<PermissionRule>),
     GroupRemovePerms(GroupUID, Vec<PermissionPath>),
     GroupAddParentGroups(GroupUID, Vec<GroupUID>),
+    GroupAddChildrenGroups(GroupUID, Vec<GroupUID>),
     GroupRemoveParentGroups(GroupUID, Vec<GroupUID>),
+    GroupRemoveChildrenGroups(GroupUID, Vec<GroupUID>),
     GroupAddUsers(GroupUID, Vec<UserUID>),
     GroupRemoveUsers(GroupUID, Vec<UserUID>),
 }

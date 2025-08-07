@@ -2,19 +2,15 @@ use axum::{body::Body, extract::{FromRequestParts, Path}, http::request::Parts, 
 use once_cell::sync::Lazy;
 use regex::Regex;
 use rustperms_nodes::proto::{rustperms_replica_proto_client::RustpermsReplicaProtoClient, CheckPermReply, CheckPermRequest};
-use tracing::{error, info, warn};
-use std::{collections::HashMap, sync::Arc};
+use tracing::{error, info};
+use std::{collections::HashMap};
 use std::task::{Context, Poll};
 use std::pin::Pin;
 use std::future::Future;
-use sea_orm::{ActiveValue::Set, DatabaseConnection};
 use tower::{Layer, Service};
-use sea_orm::{sqlx, ActiveModelTrait, DbErr, EntityTrait, RuntimeErr};
-use sea_orm::QueryFilter;
-use sea_orm::ColumnTrait;
 use axum::http::{Request, Response, StatusCode};
 
-use shared::{tokens::jwt::AccessTokenPayload, utils::set_encoder::decode_set_from_string};
+use shared::{tokens::jwt::AccessTokenPayload};
 
 // Why we can't directly get a Path<Vec<(String, String)>> in middleware?
 // At least path_extractor -> extensions -> middleware_layer works:
@@ -71,7 +67,7 @@ impl PermissionMiddlewareBundle {
         let c = REGEX.captures_iter(&permission)
             .filter_map(|m| m.get(1).map(|v| (format!("{{{}}}", v.as_str()), v.as_str().to_string())))
             .collect::<Vec<(String, String)>>();
-        let permission = if c.len() != 0 {
+        let permission = if !c.is_empty() {
             PermissionKind::Pattern { incomplete: permission, replace: c }
         } else {
             PermissionKind::NoPat { permission }
@@ -81,19 +77,7 @@ impl PermissionMiddlewareBundle {
 }
 
 
-/// Permission access layer.
-/// 
-/// You also can use patterns, just put your var in brackets:
-/// ```ignore
-/// route("/user/{id}", <handler>)
-///     .layer(PermissionAccessLayer::create_and_register("vesper.perm.{id}".to_string(), &db))
-/// 
-/// // binds {id} to {id}
-/// ```
-/// ## DON'T CHAIN IT LIKE THAT:
-/// ```ignore
-/// route("/user/{id}", get(<handler>).layer(perm).post(<handler>).layer(perm2))
-/// ```
+
 #[derive(Clone)]
 pub struct PermissionAccessLayer(PermissionMiddlewareBundle);
 
@@ -112,7 +96,6 @@ impl PermissionAccessLayer {
 
 impl<S> Layer<S> for PermissionAccessLayer {
     type Service = PermissionAccessService<S>;
-    
     fn layer(&self, inner: S) -> Self::Service {
         PermissionAccessService {
             service: inner,
@@ -209,5 +192,34 @@ where
             parts.extensions.insert(ExtractedPathKV(p));
         };
         Ok(Self)
+    }
+}
+
+/// Permission access layer builder
+/// 
+/// You also can use patterns, just put your var in brackets:
+/// ```ignore
+/// let p = PermissionMiddlewareBuilder::new(...)
+/// route("/user/{id}", <handler>)
+///     .layer(p.build("vesper.perm.{id}").await?)
+/// 
+/// // binds {id} to {id}
+/// ```
+/// ## DON'T CHAIN IT LIKE THAT:
+/// ```ignore
+/// route("/user/{id}", get(<handler>).layer(perm).post(<handler>).layer(perm2))
+/// ```
+pub struct PermissionMiddlewareBuilder {
+    // permission: String, rustperms_client: RustpermsReplicaProtoClient<tonic::transport::Channel>, on_fail: StatusCode
+    pub rustperms_client: RustpermsReplicaProtoClient<tonic::transport::Channel>,
+}
+
+impl PermissionMiddlewareBuilder {
+    pub fn new(rustperms_client: RustpermsReplicaProtoClient<tonic::transport::Channel>) -> Self {
+        Self {rustperms_client}
+    }
+
+    pub async fn build(&self, path: &str) -> anyhow::Result<PermissionAccessLayer> {
+        PermissionAccessLayer::new(path.to_string(), self.rustperms_client.clone(), StatusCode::UNAUTHORIZED).await
     }
 }

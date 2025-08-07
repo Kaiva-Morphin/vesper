@@ -14,3 +14,4 @@ tracing = "0.1.41"
 smallvec = { version = "1.15.1", features = ["serde"] }
 uuid = { workspace = true, features = ["v4"] }
 once_cell = "1.21.3"
+xxhash-rust = { version = "0.8.15", features = ["xxh3", "xxh32", "xxh64"] }

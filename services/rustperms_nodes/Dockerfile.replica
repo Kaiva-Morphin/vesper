@@ -1,0 +1,22 @@
+FROM rust:1.88 AS builder
+
+RUN apt-get update && apt-get install protobuf-compiler -y && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY ./Cargo.toml ./
+COPY ./services ./services
+COPY ./libs ./libs
+RUN cargo build -p rustperms_nodes --bin replica --release
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/replica /usr/local/bin/replica
+
+ENV RUSTPERMS_MASTER_PORT=3000
+
+CMD ["replica"]

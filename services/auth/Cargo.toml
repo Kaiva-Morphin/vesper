@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["disable_turnstile"] # "disable_email"
+default = ["disable_turnstile", "disable_email"]
 disable_turnstile = []
 disable_email = []
 
@@ -18,7 +18,7 @@ serde.workspace = true
 shared.workspace = true
 tokio.workspace = true
 tower.workspace = true
-tower-http.workspace = true
+tower-http = { workspace = true, features = ["cors"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true
 lazy_static.workspace = true
@@ -40,3 +40,13 @@ service = { version = "0.1.0", path = "../../libs/service" }
 layers = { version = "0.1.0", path = "../../libs/layers" }
 bb8 = "0.9.0"
 bb8-redis = "0.21.0"
+tower_governor = "0.7.0"
+oauth = "0.0.1"
+oauth2 = { version = "5.0.0", features = ["reqwest"] }
+reqwest = { workspace = true, features = ["rustls-tls"] }
+serde_json.workspace = true
+chrono.workspace = true
+tonic.workspace = true
+rustperms_nodes = { version = "0.1.0", path = "../rustperms_nodes" }
+perms = { version = "0.1.0", path = "../../libs/perms" }
+rustperms = { version = "0.1.0", path = "../../libs/rustperms" }

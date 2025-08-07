@@ -1,3 +1,4 @@
+pub mod delete;
 pub mod logout;
 pub mod set_refresh_rules;
 pub mod logout_other;
@@ -7,3 +8,4 @@ pub mod refresh;
 pub mod register;
 pub mod login;
 pub mod username;
+pub mod timestamp;

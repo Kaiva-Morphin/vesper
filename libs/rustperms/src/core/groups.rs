@@ -53,7 +53,9 @@ impl Group {
     pub fn get_children(&self) -> &HashSet<GroupUID> {&self.children}
     pub fn has_child(&self, group: &GroupUID) -> bool {self.children.contains(group)}
     pub fn add_child(&mut self, group: GroupUID) {self.children.insert(group);}
+    pub fn add_children(&mut self, groups: Vec<GroupUID>) {self.children.extend(groups)}
     pub fn remove_child(&mut self, group: &GroupUID) {self.children.remove(group);}
+    pub fn remove_children(&mut self, groups: &Vec<GroupUID>) {for group in groups {self.children.remove(group);}}
     
     pub fn with_weight(self, weight: i32) -> Self {Self {weight, ..self} }
     pub fn set_weight(&mut self, weight: i32) { self.weight = weight }

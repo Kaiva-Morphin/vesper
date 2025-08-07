@@ -36,10 +36,10 @@ Cargo.lock
 
 # dbs script
 !/dbs/init_postgre.sql
+!/dbs/minio/init.sh
 
 # rs keys
 private.pem
 public.pem
 
-
-
+certs/

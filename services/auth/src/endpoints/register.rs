@@ -1,58 +1,34 @@
 use axum::{extract::State, http::{HeaderMap, StatusCode}, response::IntoResponse, Extension, Json};
 use axum_extra::extract::CookieJar;
 use layers::logging::UserInfoExt;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
-use shared::utils::{app_err::AppErr, header::{get_user_agent, get_user_ip}, validation::{RegisterValidations, COMPILED_EMAIL_REGEX, COMPILED_LOGIN_REGEX, COMPILED_PASSWORD_REGEX}, verify_turnstile::verify_turnstile};
+use shared::utils::{app_err::AppErr, validation::RegisterValidations};
 
 
-use lazy_static::lazy_static;
 
-use crate::{repository::tokens::{generate_access, generate_and_put_refresh}, AppState, CFG};
+use crate::{repository::tokens::{generate_access, generate_and_put_refresh}, AppState};
 
-
-#[derive(Serialize, Deserialize)]
-pub struct RegisterCriteria {
-    login_len_max : usize,
-    login_len_min : usize,
-    password_len_max : usize,
-    password_len_min : usize,
-    user_uid_regex : String,
-    password_regex : String,
-    email_regex: String,
-}
-
-
-pub async fn get_criteria() -> Json<RegisterCriteria> {
-    Json(RegisterCriteria{
-        login_len_max: CFG.MAX_LOGIN_LENGTH,
-        login_len_min: CFG.MIN_LOGIN_LENGTH,
-        password_len_max: CFG.MAX_PASSWORD_LENGTH,
-        password_len_min: CFG.MIN_PASSWORD_LENGTH,
-        user_uid_regex: COMPILED_LOGIN_REGEX.to_string(),
-        password_regex: COMPILED_PASSWORD_REGEX.to_string(),
-        email_regex: COMPILED_EMAIL_REGEX.to_string(),
-    })
-}
+#[cfg(not(feature = "disable_turnstile"))]
+use shared::utils::{header::{get_user_agent, get_user_ip}, verify_turnstile::verify_turnstile};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RegisterBody {
-    pub login: String,
+    pub uid: String,
     pub nickname: String,
     pub email: String,
     pub password: String,
     pub email_code: String,
-    pub turnstile_response: String,
+    pub turnstile_token: String,
     pub tos_accepted: bool
 }
 
 impl RegisterBody {
-    fn validate(&self) -> Result<(), AppErr> {
-        if self.login.is_login_valid() &&
-            self.nickname.is_nickname_valid() &&
-            self.email.is_email_valid() &&
-            self.password.is_password_valid() {return Ok(())}
-        Err(AppErr::default())
+    fn validate(&self) -> Result<(), &'static str> {
+        if !self.uid.is_uid_valid() {return Err("Invalid uid!")}
+        if !self.nickname.is_nickname_valid() {return Err("Invalid nickname!")}
+        if !self.email.is_email_valid() {return Err("Invalid email!")}
+        if !self.password.is_password_valid() {return Err("Invalid password!")}
+        Ok(())
     }
 }
 
@@ -64,13 +40,21 @@ pub async fn register(
     Json(request_body): Json<RegisterBody>,
 ) -> Result<impl IntoResponse, AppErr> {
     if !request_body.tos_accepted {return Ok((StatusCode::BAD_REQUEST, "Accept ToS!").into_response())}; // hehehe~
-    let Ok(_) = request_body.validate() else {return Ok((StatusCode::BAD_REQUEST, "Invalid data sent!").into_response())};
+    if let Err(msg) = request_body.validate() {return Ok((StatusCode::BAD_REQUEST, msg).into_response())};
     #[cfg(not(feature = "disable_turnstile"))]
-    if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::BAD_REQUEST, "Turnstile failed").into_response())};
+    if !verify_turnstile(request_body.turnstile_token.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::BAD_REQUEST, "Turnstile failed").into_response())};
     #[cfg(not(feature = "disable_email"))]
     if !state.verify_register_code(request_body.email_code.clone(), request_body.email.clone()).await? {return Ok((StatusCode::BAD_REQUEST, "Invalid email code!").into_response())};
+    
     let email = request_body.email.clone();
-    let r = state.register_user(request_body).await?;
+    let r = state.register_user(
+        request_body.uid,
+        request_body.nickname,
+        request_body.email,
+        request_body.password,
+        None,
+        None
+    ).await?;
     let Ok((user_id, rules)) = r else {
         return Ok((StatusCode::CONFLICT, r.err().unwrap()).into_response())
     };
@@ -79,19 +63,21 @@ pub async fn register(
     Ok((jar, access_response).into_response())
 }
 
+
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RequestCodeBody {
     pub email: String,
-    pub turnstile_response: String,
+    pub turnstile_token: String,
 }
 
 pub async fn request_register_code(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _headers: HeaderMap,
     Json(request_body): Json<RequestCodeBody>,
 ) -> Result<impl IntoResponse, AppErr> {
     #[cfg(not(feature = "disable_turnstile"))]
-    if !verify_turnstile(request_body.turnstile_response.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::UNAUTHORIZED, "Turnstile failed").into_response())};
-    state.send_register_code(&request_body.email).await?;
+    if !verify_turnstile(request_body.turnstile_token.clone(), get_user_ip(&_headers)).await {return Ok((StatusCode::UNAUTHORIZED, "Turnstile failed").into_response())};
+    state.send_register_code(request_body.email).await?;
     Ok("Code sent".into_response())
 }

@@ -2,10 +2,8 @@
 
 pub mod prelude;
 
-pub mod perm_container;
-pub mod perm_container_container_rel;
-pub mod perm_container_perm_rel;
-pub mod perm_container_wildcard_rel;
-pub mod perm_wildcard;
-pub mod permission;
+pub mod friends;
+pub mod post;
 pub mod user_data;
+pub mod user_mini_profile;
+pub mod user_profile;

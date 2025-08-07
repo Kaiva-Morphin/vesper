@@ -1,7 +1,7 @@
-use std::{collections::{hash_map::Entry, HashMap, HashSet, VecDeque}, default};
-use crate::{api::actions::{RustpermsDelta, RustpermsOperation}, core::groups, prelude::*};
+use std::{collections::{hash_map::Entry, HashMap, HashSet, VecDeque}};
+use crate::{api::actions::{RustpermsDelta, RustpermsOperation}, prelude::*};
 use base64::{prelude::BASE64_URL_SAFE_NO_PAD, Engine};
-use bincode::serde::{decode_from_slice, encode_into_slice, encode_to_vec};
+use bincode::serde::{decode_from_slice, encode_to_vec};
 use ::tokio::sync::RwLock;
 
 
@@ -173,6 +173,15 @@ impl AsyncManager {
                 g.add_parents(gs);
                 true
             },
+            RustpermsOperation::GroupAddChildrenGroups(g, gs) => {
+                for gc in gs.iter() {
+                    let Some(gr) = groups.get_mut(gc) else {continue};
+                    gr.add_parent(g.clone());
+                }
+                let Some(g) = groups.get_mut(&g) else {return false};
+                g.add_children(gs);
+                true
+            },
             RustpermsOperation::GroupRemoveParentGroups(g, gs) => {
                 for gp in gs.iter() {
                     let Some(gr) = groups.get_mut(gp) else {continue};
@@ -180,6 +189,15 @@ impl AsyncManager {
                 }
                 let Some(g) = groups.get_mut(&g) else {return false};
                 g.remove_parents(gs);
+                true
+            },
+            RustpermsOperation::GroupRemoveChildrenGroups(g, gs) => {
+                for gc in gs.iter() {
+                    let Some(gr) = groups.get_mut(gc) else {continue};
+                    gr.remove_parent(&g);
+                }
+                let Some(g) = groups.get_mut(&g) else {return false};
+                g.remove_children(&gs);
                 true
             },
             RustpermsOperation::GroupAddUsers(g, us) => {
@@ -297,9 +315,9 @@ mod tests {
         let manager = AsyncManager::default();
         manager.apply(vec![
             RustpermsOperation::UserCreate("u".into()),
-            RustpermsOperation::UserUpdatePerms("u".into(), vec![(PermissionPath::from_str("a.b"), true).into()]),
+            RustpermsOperation::UserUpdatePerms("u".into(), vec![(PermissionPath::from_str("a.b"), true)]),
             RustpermsOperation::GroupCreate { group_uid: "g".into(), weight: 2000 },
-            RustpermsOperation::GroupUpdatePerms("g".into(), vec![(PermissionPath::from_str("a.b"), false).into()]),
+            RustpermsOperation::GroupUpdatePerms("g".into(), vec![(PermissionPath::from_str("a.b"), false)]),
             RustpermsOperation::GroupAddUsers("g".into(), vec!["u".into()]),
         ].into()).await;
 
@@ -314,8 +332,8 @@ mod tests {
             RustpermsOperation::UserCreate("u".into()),
             RustpermsOperation::GroupCreate { group_uid: "g1".into(), weight: 100 },
             RustpermsOperation::GroupCreate { group_uid: "g2".into(), weight: 100 },
-            RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("a.*"), true).into()]),
-            RustpermsOperation::GroupUpdatePerms("g2".into(), vec![(path("a.b"), false).into()]),
+            RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("a.*"), true)]),
+            RustpermsOperation::GroupUpdatePerms("g2".into(), vec![(path("a.b"), false)]),
             RustpermsOperation::GroupAddUsers("g1".into(), vec!["u".into()]),
             RustpermsOperation::GroupAddUsers("g2".into(), vec!["u".into()]),
         ].into()).await;
@@ -331,8 +349,8 @@ mod tests {
             RustpermsOperation::UserCreate("u".into()),
             RustpermsOperation::GroupCreate { group_uid: "g1".into(), weight: 100 },
             RustpermsOperation::GroupCreate { group_uid: "g2".into(), weight: 100 },
-            RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("a.b"), false).into()]),
-            RustpermsOperation::GroupUpdatePerms("g2".into(), vec![(path("a.b"), true).into()]),
+            RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("a.b"), false)]),
+            RustpermsOperation::GroupUpdatePerms("g2".into(), vec![(path("a.b"), true)]),
             RustpermsOperation::GroupAddUsers("g1".into(), vec!["u".into()]),
             RustpermsOperation::GroupAddUsers("g2".into(), vec!["u".into()]),
         ].into()).await;
@@ -348,7 +366,7 @@ mod tests {
             RustpermsOperation::UserCreate("u".into()),
             RustpermsOperation::GroupCreate { group_uid: "g1".into(), weight: 10 },
             RustpermsOperation::GroupCreate { group_uid: "g2".into(), weight: 20 },
-            RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("x.y"), true).into()]),
+            RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("x.y"), true)]),
             RustpermsOperation::GroupAddParentGroups("g2".into(), vec!["g1".into()]),
             RustpermsOperation::GroupAddUsers("g2".into(), vec!["u".into()]),
         ].into()).await;
@@ -364,7 +382,7 @@ mod tests {
             RustpermsOperation::UserCreate("u".into()),
             RustpermsOperation::GroupCreate { group_uid: "g1".into(), weight: 50 },
             RustpermsOperation::GroupCreate { group_uid: "g2".into(), weight: 60 },
-            RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("a.b"), true).into()]),
+            RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("a.b"), true)]),
             RustpermsOperation::GroupAddParentGroups("g1".into(), vec!["g2".into()]),
             RustpermsOperation::GroupAddParentGroups("g2".into(), vec!["g1".into()]),
             RustpermsOperation::GroupAddUsers("g1".into(), vec!["u".into()]),

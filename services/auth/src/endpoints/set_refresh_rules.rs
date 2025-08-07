@@ -1,12 +1,11 @@
-use axum::{body::Body, extract::State, http::{HeaderMap, Response}, Extension, Json};
+use axum::{body::Body, extract::State, http::Response, Extension, Json};
 use axum_extra::extract::CookieJar;
 use layers::logging::UserInfoExt;
 use serde::{Deserialize, Serialize};
 use shared::tokens::jwt::RefreshRules;
 
-use crate::AppState;
+use crate::{repository::refresh_processor::RefreshProcessor, AppState};
 
-use super::refresh::RefreshProcessor;
 
 
 
@@ -27,7 +26,7 @@ pub async fn set_refresh_rules(
     }): Json<SetRefreshRules>,
 ) -> Result<Response<Body>, Response<Body>> {
     let new_rules= RefreshRules { warn_suspicious_refresh, allow_suspicious_refresh};
-    Ok(RefreshProcessor::begin(jar, &state, user_info).await?.refresh_rules().await?.update_refresh_rules(new_rules).await?.generate_tokens().await?)
+    RefreshProcessor::begin(jar, &state, user_info).await?.check_refresh_rules().await?.update_refresh_rules(new_rules).await?.generate_tokens().await
 }
 
 

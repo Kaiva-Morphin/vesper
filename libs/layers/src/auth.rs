@@ -68,9 +68,7 @@ where
             info!("Auth passed. User: {}", decoded_token.user);
             req.extensions_mut().insert(decoded_token);
             let fut = self.service.call(req);
-            Box::pin(async move {
-                fut.await
-            })
+            Box::pin(fut)
         } else {
             info!("Auth failed!");
             Box::pin(async move {Ok(Response::builder()

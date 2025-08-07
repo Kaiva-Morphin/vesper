@@ -1,8 +1,8 @@
 use axum::http::HeaderMap;
 
-pub const UNKNOWN_FINGERPRINT : &'static str = "unknown_fingerprint";
-pub const UNKNOWN_USER_AGENT : &'static str = "unknown_user_agent";
-pub const UNKNOWN_IP : &'static str = "unknown_ip";
+pub const UNKNOWN_FINGERPRINT : &str = "unknown_fingerprint";
+pub const UNKNOWN_USER_AGENT : &str = "unknown_user_agent";
+pub const UNKNOWN_IP : &str = "unknown_ip";
 
 pub fn get_user_agent(headers: &HeaderMap) -> String {
     headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or(UNKNOWN_USER_AGENT).to_string()

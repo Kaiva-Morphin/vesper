@@ -5,7 +5,7 @@ use message_broker::email::types::Email;
 use message_broker::email::types::EmailKind;
 use rand::distr::Alphanumeric;
 use rand::Rng;
-use bb8_redis::{redis::{AsyncCommands, RedisError}, RedisConnectionManager};
+use bb8_redis::redis::AsyncCommands;
 
 use anyhow::Result;
 use redis_utils::redis::RedisConn;
@@ -153,8 +153,7 @@ impl RedisEmailCode for RedisConn {
         // bad: let (key , _) = EmailCode{kind: CodeKind::PasswordRecovery,code,email: "".to_owned(),}.key_value();
         let key = EmailCode::recovery_key(code); // much better
         let mut conn = self.pool.get().await?;
-        let r : Option<String> = conn.get(&key).await?;
-        let _  : () = conn.del(&key).await?;
+        let r : Option<String> = conn.get_del(&key).await?;
         Ok(r)
     }
 }
@@ -162,8 +161,8 @@ impl RedisEmailCode for RedisConn {
 
 
 impl AppState {
-    pub async fn try_send_recovery_code(&self, email_or_login: &String) -> Result<()> {
-        let Some(email) = self.get_email_from_login_cred(email_or_login).await? else {return Ok(())};
+    pub async fn try_send_recovery_code(&self, email_or_uid: &String) -> Result<()> {
+        let Some(email) = self.get_email_from_login_cred(email_or_uid).await? else {return Ok(())};
         let raw = generate_reset_token();
         info!("Generated recovery code {}", raw);
         let email_code = EmailCode::recovery(email.clone(), raw);
@@ -173,14 +172,14 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn send_changed_notification(&self, email: &String, field: ChangedField) -> Result<()> {
-        let email = Email::changed(email.clone(), field);
+    pub async fn send_changed_notification(&self, email: String, field: ChangedField) -> Result<()> {
+        let email = Email::changed(email, field);
         self.send_email(email).await?;
         Ok(())
     }
 
-    pub async fn send_register_code(&self, email: &String) -> Result<()> {
-        let email_code = EmailCode::register(email.clone());
+    pub async fn send_register_code(&self, email: String) -> Result<()> {
+        let email_code = EmailCode::register(email);
         info!("Generated code: {}", email_code.code);
         self.send_email(email_code.clone().to_email()).await?;
         self.redis_tokens.set_code(email_code).await?;
@@ -188,27 +187,27 @@ impl AppState {
         Ok(())
     }
 
-    pub async fn send_new_login(&self, email: &String, ip : String, user_agent : String) -> Result<()> {
+    pub async fn send_new_login(&self, email: String, ip : String, user_agent : String) -> Result<()> {
         let email = Email{
-            to: email.clone(),
+            to: email,
             kind: EmailKind::NewLogin { ip, user_agent }
         };
         self.send_email(email).await?;
         Ok(())
     }
 
-    pub async fn send_suspicious_refresh(&self, email: &String, ip : String, user_agent : String) -> Result<()> {
+    pub async fn send_suspicious_refresh(&self, email: String, ip : String, user_agent : String) -> Result<()> {
         let email = Email{
-            to: email.clone(),
+            to: email,
             kind: EmailKind::SuspiciousRefresh { ip, user_agent }
         };
         self.send_email(email).await?;
         Ok(())
     }
 
-    pub async fn send_refresh_rules_update(&self, email: &String, ip : String, user_agent : String) -> Result<()> {
+    pub async fn send_refresh_rules_update(&self, email: String, ip : String, user_agent : String) -> Result<()> {
         let email = Email{
-            to: email.clone(),
+            to: email,
             kind: EmailKind::RefreshRulesUpdate { ip, user_agent }
         };
         self.send_email(email).await?;
@@ -221,12 +220,12 @@ impl AppState {
             code,
             email
         };
-        Ok(self.redis_tokens.verify_code(email_code).await?)
+        self.redis_tokens.verify_code(email_code).await
     }
     pub async fn recovery_password(&self, code: &String, new_password: String) -> Result<Option<()>> {
         if let Some(email) = self.redis_tokens.pop_recovery_email(code).await? {
             self.set_password(&email, new_password).await?;
-            self.send_changed_notification(&email, ChangedField::Password).await?;
+            self.send_changed_notification(email, ChangedField::Password).await?;
             return Ok(Some(()));
         };
         Ok(None)

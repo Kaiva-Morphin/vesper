@@ -5,31 +5,12 @@
             "command": "powershell",
 			"args": [
 				"-Command",
-				"npm",
-				"run",
-				"dev"
-			],
-			"problemMatcher": [],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-			"options": {
-                "cwd": "${workspaceFolder}/frontend"
-            },
-			"label": "vesper: run frontend"
-		},
-		{
-			"type": "process",
-            "command": "powershell",
-			"args": [
-				"-Command",
 				"sea-orm-cli",
 				"migrate",
 				"-d",
 				"./libs/postgre/migrations",
 				"-u",
-				"postgres://yugabyte@localhost:5433/yugabyte",
+				"postgres://root:root@localhost:31020/vesper",
 				"generate",
 				"latest"
 			],
@@ -54,7 +35,7 @@
 				"-o",
 				"./libs/postgre/entities/src",
 				"-u",
-				"postgres://yugabyte@localhost:5433/yugabyte",
+				"postgres://root:root@localhost:31020/vesper",
 			],
 			"problemMatcher": [],
 			"group": {
@@ -90,6 +71,44 @@
 			"command": "run",
             "args": [
                 "-p",
+                "init"
+            ],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: run init"
+		},
+		{
+			"type": "cargo",
+			"command": "run",
+            "args": [
+                "-p",
+                "load_balancer"
+            ],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: run balancer"
+		},
+		{
+			"type": "cargo",
+			"command": "run",
+            "args": [
+                "-p",
                 "email"
             ],
 			"problemMatcher": [
@@ -103,25 +122,6 @@
                 "cwd": "${workspaceFolder}/"
             },
 			"label": "vesper: run email"
-		},
-		{
-			"type": "cargo",
-			"command": "run",
-            "args": [
-                "-p",
-                "perms"
-            ],
-			"problemMatcher": [
-				"$rustc"
-			],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-			"options": {
-                "cwd": "${workspaceFolder}/"
-            },
-			"label": "vesper: run perms"
 		},
 		{
 			"type": "process",
@@ -139,6 +139,48 @@
                 "cwd": "${workspaceFolder}/"
             },
 			"label": "vesper: up docker"
+		},
+		{
+			"type": "cargo",
+			"command": "run",
+            "args": [
+                "-p",
+                "rustperms_nodes",
+				"--bin",
+				"master"
+            ],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: run rustperms master"
+		},
+		{
+			"type": "cargo",
+			"command": "run",
+            "args": [
+                "-p",
+                "rustperms_nodes",
+				"--bin",
+				"replica"
+            ],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: run rustperms replica"
 		},
 		{
 			"type": "process",

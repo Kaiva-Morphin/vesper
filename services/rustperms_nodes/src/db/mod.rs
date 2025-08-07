@@ -1,16 +1,13 @@
 pub mod models;
-use std::collections::HashMap;
 
-use rustperms::{api::actions::{RustpermsDelta, RustpermsOperation}, prelude::{AsyncManager, PermPath, PermissionPart, PermissionPath}};
-use sqlx::{postgres::PgPoolOptions, prelude::FromRow, Connection, Executor, IntoArguments, PgConnection, PgExecutor, Pool, Postgres, Transaction, Type};
+use rustperms::{api::actions::{RustpermsDelta, RustpermsOperation}, prelude::{AsyncManager, PermPath}};
+use sqlx::{postgres::PgPoolOptions, Connection, Executor, IntoArguments, Pool, Postgres, Transaction, Type};
 use anyhow::Result;
-use tokio::sync::RwLock;
-use tonic::async_trait;
 use tracing::error;
 
-pub const USER_SCHEMA : &'static str = include_str!("./schema/user.sql");
-pub const GROUP_SCHEMA : &'static str = include_str!("./schema/group.sql");
-pub const DROP_SCHEMA : &'static str = include_str!("./schema/drop.sql");
+pub const USER_SCHEMA : &str = include_str!("./schema/user.sql");
+pub const GROUP_SCHEMA : &str = include_str!("./schema/group.sql");
+pub const DROP_SCHEMA : &str = include_str!("./schema/drop.sql");
 
 
 pub struct PostgreStorage {
@@ -174,11 +171,33 @@ where
                     .execute(e).await?;
                 Ok(())
             }
+            RustpermsOperation::GroupAddChildrenGroups(g, gs, ) => {
+                sqlx::query(r#"
+                    INSERT INTO rustperms_group_relations (group_uid, parent_group_uid) 
+                    SELECT groups.group, $1 FROM
+                    UNNEST ($2::text[]) as groups("group")
+                    ON CONFLICT (group_uid, parent_group_uid) DO nothing"#)
+                    .bind(g)
+                    .bind(gs)
+                    .execute(e).await?;
+                Ok(())
+            }
             RustpermsOperation::GroupRemoveParentGroups(g, gs) => {
                 sqlx::query(r#"
                     DELETE FROM rustperms_group_relations
                     USING UNNEST($2::text[]) as groups("group")
                     WHERE group_uid = $1 AND parent_group_uid = groups.group
+                "#)
+                    .bind(g)
+                    .bind(gs)
+                    .execute(e).await?;
+                Ok(())
+            }
+            RustpermsOperation::GroupRemoveChildrenGroups(g, gs) => {
+                sqlx::query(r#"
+                    DELETE FROM rustperms_group_relations
+                    USING UNNEST($2::text[]) as groups("group")
+                    WHERE parent_group_uid = $1 AND group_uid = groups.group
                 "#)
                     .bind(g)
                     .bind(gs)

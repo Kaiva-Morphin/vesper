@@ -1,12 +1,10 @@
-use axum::{body::Body, extract::State, http::{HeaderMap, Response}, Extension, Json};
+use axum::{body::Body, extract::State, http::Response, Extension};
 use axum_extra::extract::CookieJar;
 use layers::logging::UserInfoExt;
-use serde::{Deserialize, Serialize};
 use anyhow::Result;
 
-use crate::AppState;
+use crate::{repository::refresh_processor::RefreshProcessor, AppState};
 
-use super::refresh::RefreshProcessor;
 
 // #[derive(Debug, Serialize, Deserialize)]
 // pub struct LogoutBody {
@@ -21,5 +19,8 @@ pub async fn logout_other(
 
     // Json(payload): Json<LogoutBody>,
 ) -> Result<Response<Body>, Response<Body>>  {
-    Ok(RefreshProcessor::begin(jar, &state, user_info).await?.refresh_rules().await?.rm_all_refresh().await?.generate_tokens().await?)
+    RefreshProcessor::begin(jar, &state, user_info).await?
+            .check_refresh_rules().await?
+            .rm_all_refresh().await?
+            .generate_tokens().await
 }

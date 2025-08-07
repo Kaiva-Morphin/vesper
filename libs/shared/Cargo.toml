@@ -3,6 +3,10 @@ name = "shared"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+jwt = []
+
 [dependencies]
 ctor = "0.4.0"
 dotenvy = "0.15.7"
@@ -34,3 +38,4 @@ regex.workspace = true
 sha2 = "0.10.8"
 zstd = "0.13.3"
 bincode = { version = "2.0.1", features = ["serde"] }
+rand.workspace = true

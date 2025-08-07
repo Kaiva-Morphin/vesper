@@ -1,0 +1,20 @@
+[package]
+name = "perms"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+base64 = "0.22.1"
+bincode = { version = "2.0.1", features = ["serde"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+tokio = {version = "1.46", features = ["full"]}
+tracing = "0.1.41"
+smallvec = { version = "1.15.1", features = ["serde"] }
+uuid = { workspace = true, features = ["v4"] }
+once_cell = "1.21.3"
+rustperms = { version = "0.1.0", path = "../rustperms" }
+rustperms_nodes = { version = "0.1.0", path = "../../services/rustperms_nodes" }
+tonic.workspace = true
+paste = "1.0.15"

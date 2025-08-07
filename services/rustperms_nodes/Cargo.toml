@@ -16,7 +16,7 @@ sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "mac
 anyhow.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
-tonic = "0.13.1"
+tonic.workspace = true
 tower.workspace = true
 # layers = { version = "0.1.0", path = "../../libs/layers" }
 tower-http.workspace = true
@@ -25,7 +25,7 @@ futures = { version = "0.3.31", features = ["std"] }
 [build-dependencies]
 tonic-build = "0.13.1"
 
-[[bin]]
+[[test]]
 name = "test"
 path = "src/test.rs"
 

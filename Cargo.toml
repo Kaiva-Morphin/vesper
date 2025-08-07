@@ -9,16 +9,14 @@ members = [
     "services/auth",
     "services/email",
     "services/user",
-    "services/perms",
     "services/calls",
     "services/posts",
     "services/service_father",
-    "services/filesender",
     "services/root_panel",
     "libs/service",
     "libs/layers",
     "services/rustperms_nodes",
-    "libs/rustperms",
+    "libs/rustperms", "services/load_balancer", "services/notifier", "services/init", "libs/perms", 
     # "services/old-auth",
 ]
 resolver = "2"
@@ -40,7 +38,7 @@ axum-extra = { version = "0.10.1", features = ["cookie"] }
 axum = { version = "0.8.4", features = ["macros"] }
 uuid = { version = "1.16.0", features = ["serde", "v4"] }
 rand = "0.9.1"
-bcrypt = "0.17.0"   
+bcrypt = "0.17.0"
 regex = "1.11.1"
 jsonwebtoken = {version="9.3.1", features = ["use_pem"]}
 lazy_static = "1.5.0"
@@ -54,4 +52,4 @@ postgre_migrations = {path = "libs/postgre/migrations"}
 postgre_entities = {path = "libs/postgre/entities"}
 redis_utils = {path = "libs/redis_utils"}
 message_broker = {path = "libs/message_broker" }
-
+tonic = "0.13.1"

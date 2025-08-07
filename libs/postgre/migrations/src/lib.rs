@@ -10,6 +10,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250306_130625_init::Migration),
             Box::new(m20250309_125602_user_data_update::Migration),
             // Box::new(m20250418_172130_perms::Migration),
+            Box::new(m20250807_160804_user_profiles::Migration),
         ]
     }
 }
@@ -17,3 +18,4 @@ impl MigratorTrait for Migrator {
 mod m20250306_130625_init;
 mod m20250309_125602_user_data_update;
 // mod m20250418_172130_perms;
+mod m20250807_160804_user_profiles;

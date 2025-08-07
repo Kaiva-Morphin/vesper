@@ -18,11 +18,5 @@
         "titleBar.inactiveBackground": "#83256199",
         "titleBar.inactiveForeground": "#e7e7e799"
     },
-    "peacock.color": "#832561",
-    "cSpell.words": [
-        "chrono",
-        "CRFS",
-        "reqwest",
-        "zadd"
-    ]
+    "peacock.color": "#832561"
 }

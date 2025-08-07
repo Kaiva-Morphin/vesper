@@ -5,41 +5,52 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
 #[sea_orm(table_name = "user_data")]
 pub struct Model {
-    pub allow_suspicious_refresh: bool,
-    pub last_login_change: Option<DateTime>,
-    pub warn_suspicious_refresh: bool,
-    pub perm_container: Uuid,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub guid: Uuid,
+    #[sea_orm(unique)]
+    pub uid: String,
+    pub nickname: String,
+    pub password: String,
     #[sea_orm(unique)]
     pub email: String,
     #[sea_orm(unique)]
-    pub login: String,
-    pub updated_at: DateTime,
-    #[sea_orm(primary_key, auto_increment = false)]
-    pub uuid: Uuid,
-    pub password: String,
+    pub discord_id: Option<String>,
     #[sea_orm(unique)]
     pub google_id: Option<String>,
-    pub nickname: String,
-    #[sea_orm(unique)]
-    pub discord_id: Option<String>,
+    pub last_uid_change: Option<DateTime>,
+    pub updated_at: DateTime,
     pub created_at: DateTime,
+    pub warn_suspicious_refresh: bool,
+    pub allow_suspicious_refresh: bool,
+    pub avatar: Option<String>,
+    pub badges: Vec<i16>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::perm_container::Entity",
-        from = "Column::PermContainer",
-        to = "super::perm_container::Column::Id",
-        on_update = "NoAction",
-        on_delete = "Cascade"
-    )]
-    PermContainer,
+    #[sea_orm(has_one = "super::post::Entity")]
+    Post,
+    #[sea_orm(has_one = "super::user_mini_profile::Entity")]
+    UserMiniProfile,
+    #[sea_orm(has_one = "super::user_profile::Entity")]
+    UserProfile,
 }
 
-impl Related<super::perm_container::Entity> for Entity {
+impl Related<super::post::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::PermContainer.def()
+        Relation::Post.def()
+    }
+}
+
+impl Related<super::user_mini_profile::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::UserMiniProfile.def()
+    }
+}
+
+impl Related<super::user_profile::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::UserProfile.def()
     }
 }
 

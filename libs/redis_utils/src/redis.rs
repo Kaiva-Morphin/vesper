@@ -1,7 +1,5 @@
-use std::ops::{Deref, DerefMut};
 
 use bb8_redis::RedisConnectionManager;
-use redis::Client;
 
 use crate::ENV;
 

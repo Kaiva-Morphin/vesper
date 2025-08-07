@@ -22,7 +22,6 @@ fn combination_encode_between(
 
     combination_encode_between(pack, base, set, low, mid);
     combination_encode_between(pack, base, set, mid, high);
-    return;
 }
 
 fn combination_encode(set: &[u64], max: u64) -> BigUint {
@@ -53,7 +52,7 @@ fn combination_decode_between(unpack: &mut BigUint, set: &mut [u64], low: usize,
     }
 
     let div = set[high] - set[low] - 1;
-    let rem = *(&*unpack % div).to_u64_digits().get(0).unwrap_or(&0);
+    let rem = *(&*unpack % div).to_u64_digits().first().unwrap_or(&0);
     *unpack /= div;
     set[mid] = set[low] + 1 + rem;
 
@@ -70,15 +69,15 @@ fn combination_decode(pack: &BigUint, num: usize, max: u64) -> Vec<u64> {
     let mut set = vec![0; num];
 
     if num == 1 {
-        set[0] = *unpack.to_u64_digits().get(0).unwrap_or(&0);
+        set[0] = *unpack.to_u64_digits().first().unwrap_or(&0);
         return set;
     }
 
     let div = max - num as u64 + 2;
-    set[0] = *(&unpack % div).to_u64_digits().get(0).unwrap_or(&0);
+    set[0] = *(&unpack % div).to_u64_digits().first().unwrap_or(&0);
     unpack /= div;
 
-    let rem = *(&unpack % (max - set[0])).to_u64_digits().get(0).unwrap_or(&0);
+    let rem = *(&unpack % (max - set[0])).to_u64_digits().first().unwrap_or(&0);
     unpack /= max - set[0];
     set[num - 1] = set[0] + 1 + rem;
 

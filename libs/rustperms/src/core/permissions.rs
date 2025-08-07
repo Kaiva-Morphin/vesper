@@ -14,6 +14,22 @@ pub trait PermPath {
     fn format(&self) -> String;
 }
 
+pub trait IntoPermPath {
+    fn into_perm(self) -> PermissionPath;
+}
+
+impl IntoPermPath for &str {
+    fn into_perm(self) -> PermissionPath {
+        PermissionPath::from_str(self)
+    }
+}
+
+impl IntoPermPath for String {
+    fn into_perm(self) -> PermissionPath {
+        PermissionPath::from_str(&self)
+    }
+}
+
 impl PermPath for PermissionPath {
     fn from_str(path: &str) -> PermissionPath {
         path.split('.').map(|s| s.to_string()).collect()
@@ -194,7 +210,6 @@ pub trait PermissionInterface {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio;
         
     #[test]
     fn test_perm_path() {
@@ -329,4 +344,12 @@ mod tests {
 
         assert_eq!(base.get(&PermissionPath::from_str("a.b.c")), Some((false, MatchType::Wildcard)));
     }
+    #[test]
+    fn test_remove_with_wildcard() {
+        let mut tree = PermissionRuleNode::new();
+        tree.set(PermissionPath::from_str("a.*.c"), true);
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), Some((true, MatchType::Wildcard)));
+        tree.remove(&PermissionPath::from_str("a.*.c"));
+        assert_eq!(tree.get(&PermissionPath::from_str("a.b.c")), None);
+    } 
 }

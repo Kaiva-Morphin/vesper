@@ -1,3 +1,4 @@
+pub mod token;
 pub mod validation;
 pub mod hash;
 pub mod cookies;
@@ -7,3 +8,6 @@ pub mod app_err;
 pub mod logger;
 pub mod env;
 pub mod set_encoder;
+
+
+

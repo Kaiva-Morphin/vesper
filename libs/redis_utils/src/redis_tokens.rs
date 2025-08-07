@@ -2,7 +2,6 @@ use bb8::PooledConnection;
 use bb8_redis::{redis::{AsyncCommands, RedisError}, RedisConnectionManager};
 use chrono::Utc;
 // use redis::{Client, FromRedisValue, RedisError, RedisResult};
-use reqwest::StatusCode;
 use tracing::info;
 use uuid::Uuid;
 pub use redis::Commands;
@@ -10,12 +9,12 @@ pub use redis::Commands;
 use shared::tokens::jwt::RefreshTokenRecord;
 use anyhow::Result;
 
-use crate::{redis::{RedisConn, RedisTokens}, CFG, ENV};
+use crate::{redis::{RedisConn, RedisTokens}, CFG};
 
 
 
-const REFRESH_TOKEN_PREFIX : &'static str = "RTID";
-const USER_TOKEN_PAIR_PREFIX : &'static str = "UTPP";
+const REFRESH_TOKEN_PREFIX : &str = "RTID";
+const USER_TOKEN_PAIR_PREFIX : &str = "UTPP";
 // const CRFS_TOKEN_PREFIX : &'static str = "CRFS";
 //const TEMPORARY_USERDATA_TOKEN_PREFIX : &'static str = "TMPR";
 

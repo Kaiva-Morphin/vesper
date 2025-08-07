@@ -3,33 +3,34 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "perm_container_container_rel")]
+#[sea_orm(table_name = "friends")]
 pub struct Model {
-    pub value: bool,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub perm_container_id: Uuid,
+    pub min_user_guid: Uuid,
     #[sea_orm(primary_key, auto_increment = false)]
-    pub child_perm_container_id: Uuid,
+    pub max_user_guid: Uuid,
+    pub min_user_guid_decision: bool,
+    pub max_user_guid_decision: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::perm_container::Entity",
-        from = "Column::ChildPermContainerId",
-        to = "super::perm_container::Column::Id",
+        belongs_to = "super::user_data::Entity",
+        from = "Column::MaxUserGuid",
+        to = "super::user_data::Column::Guid",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    PermContainer2,
+    UserData2,
     #[sea_orm(
-        belongs_to = "super::perm_container::Entity",
-        from = "Column::PermContainerId",
-        to = "super::perm_container::Column::Id",
+        belongs_to = "super::user_data::Entity",
+        from = "Column::MinUserGuid",
+        to = "super::user_data::Column::Guid",
         on_update = "NoAction",
         on_delete = "Cascade"
     )]
-    PermContainer1,
+    UserData1,
 }
 
 impl ActiveModelBehavior for ActiveModel {}

@@ -14,7 +14,7 @@ regex.workspace = true
 rustperms_nodes = { version = "0.1.0", path = "../../services/rustperms_nodes" }
 sea-orm.workspace = true
 shared.workspace = true
-tonic = "0.13.1"
+tonic.workspace = true
 tower.workspace = true
 tracing.workspace = true
 uuid = { workspace = true, features = ["v4"] }

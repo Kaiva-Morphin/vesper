@@ -1,0 +1,11 @@
+[package]
+name = "message_broker"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace = true
+serde.workspace = true
+async-nats.workspace = true
+shared.workspace = true
+bincode = "2.0.0"

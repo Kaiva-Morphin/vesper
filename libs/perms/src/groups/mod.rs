@@ -10,7 +10,7 @@ pub const LOGGED_SHARDING : usize = 32;
 pub const GUEST_SHARDING : usize = 32;
 pub const DEFAULT_SHARDING : usize = 32;
 
-pub async fn init_default() -> Vec<RustpermsOperation> {
+pub fn init_default() -> Vec<RustpermsOperation> {
     let mut ops = sharded_group_crate(LOGGED_GROUP.to_string(), 10, LOGGED_SHARDING);
     ops.extend(sharded_group_crate(GUEST_GROUP.to_string(), 5, GUEST_SHARDING).into_iter());
     ops.extend(sharded_group_crate(DEFAULT_GROUP.to_string(), 0, DEFAULT_SHARDING).into_iter());

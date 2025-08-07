@@ -47,6 +47,7 @@ impl MigrationTrait for Migration {
                         .to(UserDataTable::Table, UserDataTable::GUID)
                         .on_delete(ForeignKeyAction::Cascade)
                     )
+                .col(boolean_null(UserProfile::RestrictVisibility).null())
                 .col(string_null(UserProfile::EncodedTheme).null())
                 .col(string_null(UserProfile::Background).null())
                 .col(string_null(UserProfile::Status).null())
@@ -150,6 +151,7 @@ enum UserProfile {
     EncodedTheme,
     Background,
     Status,
+    RestrictVisibility
 }
 
 

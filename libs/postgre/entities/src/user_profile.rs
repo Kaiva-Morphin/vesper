@@ -7,6 +7,7 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub user_guid: Uuid,
+    pub restrict_visibility: Option<bool>,
     pub encoded_theme: Option<String>,
     pub background: Option<String>,
     pub status: Option<String>,

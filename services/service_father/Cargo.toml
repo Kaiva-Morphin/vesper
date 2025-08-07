@@ -1,0 +1,20 @@
+[package]
+name = "service_father"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+axum-extra.workspace = true
+shared.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tracing.workspace = true
+postgre_entities.workspace = true
+sea-orm.workspace = true
+serde.workspace = true
+tower-http.workspace = true
+redis_utils.workspace = true
+layers = { version = "0.1.0", path = "../../libs/layers" }
+service = { version = "0.1.0", path = "../../libs/service" }

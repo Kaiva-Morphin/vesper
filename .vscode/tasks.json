@@ -71,6 +71,25 @@
 			"command": "run",
             "args": [
                 "-p",
+                "user"
+            ],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+                "cwd": "${workspaceFolder}/"
+            },
+			"label": "vesper: run user"
+		},
+		{
+			"type": "cargo",
+			"command": "run",
+            "args": [
+                "-p",
                 "init"
             ],
 			"problemMatcher": [

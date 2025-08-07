@@ -16,7 +16,12 @@ members = [
     "libs/service",
     "libs/layers",
     "services/rustperms_nodes",
-    "libs/rustperms", "services/load_balancer", "services/notifier", "services/init", "libs/perms", 
+    "libs/rustperms", 
+    "services/load_balancer", 
+    "services/notifier", 
+    "services/init", 
+    "libs/perms", 
+    "services/store", 
     # "services/old-auth",
 ]
 resolver = "2"

@@ -16,3 +16,4 @@ db = { version = "0.1.0", path = "../../libs/postgre/db" }
 postgre_migrations.workspace = true
 perms = { version = "0.1.0", path = "../../libs/perms" }
 rustperms_nodes = { version = "0.1.0", path = "../rustperms_nodes" }
+rustperms = { version = "0.1.0", path = "../../libs/rustperms" }

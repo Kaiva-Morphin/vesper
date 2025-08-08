@@ -9,13 +9,15 @@ use std::pin::Pin;
 use std::future::Future;
 use tower::{Layer, Service};
 use axum::http::{Request, Response, StatusCode};
+use shared::utils::IntoKey;
 
 use shared::{tokens::jwt::AccessTokenPayload};
 
 // Why we can't directly get a Path<Vec<(String, String)>> in middleware?
-// At least path_extractor -> extensions -> middleware_layer works:
+// .layer(from_extractor::<ExtractPath>()))
+// At least path_extractor -> extensions -> middleware_layer works: 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum PermissionKind {
     NoPat{permission: String},
     Pattern{incomplete: String, replace: Vec<(String, String)>},
@@ -27,6 +29,7 @@ impl PermissionKind {
             Self::NoPat { permission } => Some(permission),
             Self::Pattern { incomplete, replace } => {
                 let mut permission = incomplete.clone();
+                info!("Extracted: {:?}", kvs);
                 if let Some(ExtractedPathKV(kvs)) = kvs {
                     for (in_brackets, without_brackets) in replace {
                         if let Some(v) = kvs.get(&without_brackets) {
@@ -44,7 +47,7 @@ impl PermissionKind {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PermissionMiddlewareBundle {
     pub permission: PermissionKind,
     pub rustperms_client: RustpermsReplicaProtoClient<tonic::transport::Channel>,
@@ -78,13 +81,14 @@ impl PermissionMiddlewareBundle {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PermissionAccessLayer(PermissionMiddlewareBundle);
 
 const REGEX : Lazy<Regex> = Lazy::new(||Regex::new(r"(?:\{)([^\{\}]+)(?:\})").expect("Can't parse permission pattern regex!"));
 
 impl PermissionAccessLayer {
     pub async fn new(permission: String, rustperms_client: RustpermsReplicaProtoClient<tonic::transport::Channel>, on_fail: StatusCode) -> anyhow::Result<Self> {
+        info!("Creating permission layer for {}", permission);
         Ok(Self(PermissionMiddlewareBundle::new(permission, rustperms_client, on_fail).await?))
     }
 
@@ -137,12 +141,12 @@ where
     }
 
     fn call(&mut self, req: Request<ReqBody>) -> Self::Future {
-        let Some(token) = req.extensions().get::<AccessTokenPayload>() else {
-            // todo!: qualify as guest instead of unauthorized
-            info!("Can't get token!");
-            return Box::pin(async move {Ok(Response::builder().status(StatusCode::UNAUTHORIZED).body(Body::from("Unauthorized")).unwrap())})
+        let user_uid = if let Some(token) = req.extensions().get::<AccessTokenPayload>() {
+            token.user.into_key()
+        } else {
+            "".to_string()
         };
-        let user_uid = token.user.simple().to_string();
+
         let mut client = self.perm_bundle.rustperms_client.clone();
         let on_fail = Ok(Response::builder().status(self.perm_bundle.on_fail).body(Body::empty()).unwrap());
         let kvs = req.extensions().get::<ExtractedPathKV>();
@@ -150,7 +154,7 @@ where
         let Some(permission) = permission else {return Box::pin(async {on_fail})};
         let next = self.service.call(req);
         Box::pin(async move { 
-            info!("Starting {} check for {}", permission, user_uid);
+            info!("Starting {} check for {}", permission, if user_uid == "" {"\"guest\""} else {&user_uid});
             let reply = client.check_perm(
                 CheckPermRequest{user_uid, permission, unset_policy: false}
             ).await;

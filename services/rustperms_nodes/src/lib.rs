@@ -24,6 +24,6 @@ pub async fn connect_master() -> anyhow::Result<RustpermsMasterProtoClient<tonic
 }
 
 pub async fn connect_replica() -> anyhow::Result<RustpermsReplicaProtoClient<tonic::transport::Channel>> {
-    let addr = format!("http://{}:{}", ENV.RUSTPERMS_MASTER_ADDR, ENV.RUSTPERMS_MASTER_PORT);
+    let addr = format!("http://{}:{}", ENV.RUSTPERMS_REPLICA_ADDR, ENV.RUSTPERMS_REPLICA_PORT);
     Ok(RustpermsReplicaProtoClient::connect(addr).await?)
 }

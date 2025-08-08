@@ -97,7 +97,7 @@ impl FromBatch<GroupRelationModel> for RustpermsOperation {
                 .or_insert_with(|| Vec::with_capacity(1))
                 .push(model.parent_group_uid);
         }
-        m.into_iter().map(|(k, v)|RustpermsOperation::GroupAddParentGroups(k, v)).collect()
+        m.into_iter().map(|(k, v)|RustpermsOperation::GroupAddGroupsToInherit(k, v)).collect()
     }
 }
 

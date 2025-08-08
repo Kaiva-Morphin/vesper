@@ -41,8 +41,9 @@ pub fn sharded_group_crate(group: GroupUID, weight: i32, shards: usize) -> Vec<R
     gsc.push(group.clone());
     gsc.into_iter()
         .map(|n| RustpermsOperation::GroupCreate{group_uid: n, weight})
-        .chain([RustpermsOperation::GroupAddChildrenGroups(group, g)].into_iter())
+        .chain([RustpermsOperation::GroupAddGroupsToInherit(group, g)].into_iter())
         .collect::<Vec<RustpermsOperation>>()
+        
 }
 
 pub fn sharded_group_remove(group: GroupUID, shards: usize) -> Vec<RustpermsOperation> {

@@ -127,8 +127,8 @@ async fn test_group_hierarchy() -> anyhow::Result<()> {
     let actions = vec![
         RustpermsOperation::GroupCreate { group_uid: "base".into(), weight: 0 },
         RustpermsOperation::GroupCreate { group_uid: "child".into(), weight: 5 },
-        RustpermsOperation::GroupAddParentGroups("child".into(), vec!["base".into()]),
-        RustpermsOperation::GroupRemoveParentGroups("child".into(), vec!["base".into()]),
+        RustpermsOperation::GroupAddGroupsToInherit("child".into(), vec!["base".into()]),
+        RustpermsOperation::GroupRemoveToInherit("child".into(), vec!["base".into()]),
     ];
     let manager = AsyncManager::default();
     run_rustperms_test(&manager, &storage, actions).await?;

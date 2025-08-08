@@ -1,3 +1,5 @@
+use uuid::Uuid;
+
 pub mod token;
 pub mod validation;
 pub mod hash;
@@ -11,3 +13,13 @@ pub mod set_encoder;
 
 
 
+
+pub trait IntoKey {
+    fn into_key(&self) -> String;
+}
+
+impl IntoKey for Uuid {
+    fn into_key(&self) -> String {
+        self.simple().to_string()
+    }
+}

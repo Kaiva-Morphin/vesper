@@ -9,14 +9,24 @@ use tower::{Layer, Service};
 use shared::tokens::jwt::{AccessTokenPayload, TokenEncoder};
 use tracing::info;
 
-#[derive(Clone)]
-pub struct AuthAccessLayer {}
+#[derive(Clone, Default)]
+pub struct AuthAccessLayer {pass_unauthorized: bool}
+impl AuthAccessLayer {
+    pub fn allow_guests() -> Self {
+        Self {pass_unauthorized: true}
+    }
+    pub fn only_authorized() -> Self {
+        Self {pass_unauthorized: false}
+    }
+}
+
 
 impl<S> Layer<S> for AuthAccessLayer {
     type Service = AuthAccessService<S>;
     
     fn layer(&self, inner: S) -> Self::Service {
         AuthAccessService {
+            pass_unauthorized: self.pass_unauthorized.clone(),
             service: inner
         }
     }
@@ -24,6 +34,7 @@ impl<S> Layer<S> for AuthAccessLayer {
 
 pub struct AuthAccessService<S> {
     service: S,
+    pass_unauthorized: bool
 }
 
 impl<S> Clone for AuthAccessService<S>
@@ -32,6 +43,7 @@ where
 {
     fn clone(&self) -> Self {
         Self {
+            pass_unauthorized: self.pass_unauthorized.clone(),
             service: self.service.clone(),
         }
     }
@@ -65,11 +77,16 @@ where
             // } else {None}
         } else {None};
         if let Some(decoded_token) = token {
-            info!("Auth passed. User: {}", decoded_token.user);
+            info!("Auth pass_unauthorized. User: {}", decoded_token.user);
             req.extensions_mut().insert(decoded_token);
             let fut = self.service.call(req);
             Box::pin(fut)
         } else {
+            if self.pass_unauthorized {
+                info!("Auth failed, passing unauthorized as guest.");
+                let fut = self.service.call(req);
+                return Box::pin(fut)
+            }
             info!("Auth failed!");
             Box::pin(async move {Ok(Response::builder()
                     .status(StatusCode::UNAUTHORIZED)

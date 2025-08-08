@@ -18,3 +18,4 @@ rustperms = { version = "0.1.0", path = "../rustperms" }
 rustperms_nodes = { version = "0.1.0", path = "../../services/rustperms_nodes" }
 tonic.workspace = true
 paste = "1.0.15"
+shared.workspace = true

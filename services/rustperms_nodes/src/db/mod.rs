@@ -160,7 +160,7 @@ where
                     .execute(e).await?;
                 Ok(())
             }
-            RustpermsOperation::GroupAddParentGroups(g, gs) => {
+            RustpermsOperation::GroupAddGroupsToInherit(g, gs) => {
                 sqlx::query(r#"
                     INSERT INTO rustperms_group_relations (group_uid, parent_group_uid)
                     SELECT $1, groups.group FROM
@@ -171,7 +171,7 @@ where
                     .execute(e).await?;
                 Ok(())
             }
-            RustpermsOperation::GroupAddChildrenGroups(g, gs, ) => {
+            RustpermsOperation::GroupAddDependentGroups(g, gs, ) => {
                 sqlx::query(r#"
                     INSERT INTO rustperms_group_relations (group_uid, parent_group_uid) 
                     SELECT groups.group, $1 FROM
@@ -182,7 +182,7 @@ where
                     .execute(e).await?;
                 Ok(())
             }
-            RustpermsOperation::GroupRemoveParentGroups(g, gs) => {
+            RustpermsOperation::GroupRemoveToInherit(g, gs) => {
                 sqlx::query(r#"
                     DELETE FROM rustperms_group_relations
                     USING UNNEST($2::text[]) as groups("group")
@@ -193,7 +193,7 @@ where
                     .execute(e).await?;
                 Ok(())
             }
-            RustpermsOperation::GroupRemoveChildrenGroups(g, gs) => {
+            RustpermsOperation::GroupRemoveDependentGroups(g, gs) => {
                 sqlx::query(r#"
                     DELETE FROM rustperms_group_relations
                     USING UNNEST($2::text[]) as groups("group")

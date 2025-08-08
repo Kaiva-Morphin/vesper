@@ -23,9 +23,7 @@ rule!(PROFILE_VIEW_PERM, "user.profile.view");
 
 pub fn grant_default() -> Vec<RustpermsOperation> {
     sharded_group_update_perms(DEFAULT_GROUP.to_string(), DEFAULT_SHARDING, vec![
-        // ("*", (PermissionPath::from_str(&format!("{PROFILE_EDIT_PERM}.*")), true)),
-        // ("*", (PermissionPath::from_str(&format!("{PROFILE_VIEW_PERM}.*")), true)),
-        // ("*", (profile_view_perm("*").into_perm(), true)),
+        ("*", (profile_view_perm("*").into_perm(), true)),
     ])
 }
 

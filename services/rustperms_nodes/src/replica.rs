@@ -8,7 +8,6 @@ use anyhow::Result;
 
 
 use rustperms_nodes::proto::rustperms_replica_proto_server::RustpermsReplicaProtoServer;
-use rustperms_nodes::proto::{rustperms_master_proto_client::RustpermsMasterProtoClient, rustperms_replica_proto_client::RustpermsReplicaProtoClient};
 use rustperms_nodes::db::SqlStore;
 use rustperms_nodes::service::replica::{start_nats_event_listener, ReplicaNode};
 

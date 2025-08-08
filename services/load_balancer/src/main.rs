@@ -98,6 +98,7 @@ impl ProxyHttp for Gateway {
         if addr != "127.0.0.1" && addr != ENV.MY_IP {return Err(pingora::Error::new_str("Unknown addr!"))}
         let addr = 
         if path.starts_with("/api/auth") {("127.0.0.1", 16090)}
+        else if path.starts_with("/api/user") {("127.0.0.1", 16100)}
         else if path.starts_with("/assets") {("127.0.0.1", 5000)}
         else {("127.0.0.1", 12345)};
         info!("proxying to {addr:?}");

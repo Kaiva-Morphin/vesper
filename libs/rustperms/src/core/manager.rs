@@ -40,14 +40,27 @@ impl From<RustpermsDelta> for AsyncManager {
 }
 
 use anyhow::Result;
+use tracing::info;
+
+pub const GUEST_GROUP : &str = "guest";
 
 impl AsyncManager {
     pub async fn check_perm(&self, user_uid: &UserUID, permission: &PermissionPath) -> Option<(bool, MatchType)> {
-        let users = self.users.read().await;
-        let user= users.get(user_uid)?;
-        let mut result_rule = (user.get_perm(permission), RUSTPERMS_USER_WEIGHT);
-        let mut to_check: VecDeque<GroupUID> = user.get_groups().iter().cloned().collect();
-        drop(users);
+        let mut result_rule;
+        let mut to_check: VecDeque<GroupUID> ;
+        if user_uid == &"" {
+            result_rule = (None, 0);
+            to_check = VecDeque::from([GUEST_GROUP.to_string()]);
+        } else {
+            let users = self.users.read().await;
+            let user= users.get(user_uid)?;
+            result_rule = (user.get_perm(permission), RUSTPERMS_USER_WEIGHT);
+            to_check = user.get_groups().iter().cloned().collect();
+            drop(users);
+        }
+        info!("Checking permission {} for user {}", permission.format(), user_uid);
+        info!("Groups to check: {:#?}", to_check);
+
         let mut checked: HashSet<GroupUID> = HashSet::new();
         let groups = self.groups.read().await;
         while let Some(group_uid) = to_check.pop_front() {
@@ -73,6 +86,9 @@ impl AsyncManager {
                         None => result_rule = (Some(allowed), w),
                     }
                 }
+                info!("Checked group {}", group_uid);
+                info!("State: {:#?}", result_rule);
+                info!("Parents: {:#?}", group.get_parents());
                 for parent in group.get_parents() {
                     if !checked.contains::<GroupUID>(parent) {
                         to_check.push_back(parent.clone());
@@ -164,7 +180,7 @@ impl AsyncManager {
                 g.remove_perms(ps);
                 true
             }
-            RustpermsOperation::GroupAddParentGroups(g, gs) => {
+            RustpermsOperation::GroupAddGroupsToInherit(g, gs) => {
                 for gp in gs.iter() {
                     let Some(gr) = groups.get_mut(gp) else {continue};
                     gr.add_child(g.clone());
@@ -173,7 +189,7 @@ impl AsyncManager {
                 g.add_parents(gs);
                 true
             },
-            RustpermsOperation::GroupAddChildrenGroups(g, gs) => {
+            RustpermsOperation::GroupAddDependentGroups(g, gs) => {
                 for gc in gs.iter() {
                     let Some(gr) = groups.get_mut(gc) else {continue};
                     gr.add_parent(g.clone());
@@ -182,7 +198,7 @@ impl AsyncManager {
                 g.add_children(gs);
                 true
             },
-            RustpermsOperation::GroupRemoveParentGroups(g, gs) => {
+            RustpermsOperation::GroupRemoveToInherit(g, gs) => {
                 for gp in gs.iter() {
                     let Some(gr) = groups.get_mut(gp) else {continue};
                     gr.remove_child(&g);
@@ -191,7 +207,7 @@ impl AsyncManager {
                 g.remove_parents(gs);
                 true
             },
-            RustpermsOperation::GroupRemoveChildrenGroups(g, gs) => {
+            RustpermsOperation::GroupRemoveDependentGroups(g, gs) => {
                 for gc in gs.iter() {
                     let Some(gr) = groups.get_mut(gc) else {continue};
                     gr.remove_parent(&g);
@@ -295,7 +311,7 @@ mod tests {
             RustpermsOperation::GroupCreate { group_uid: "base".into(), weight: 10 },
             RustpermsOperation::GroupCreate { group_uid: "child".into(), weight: 15 },
             RustpermsOperation::GroupUpdatePerms("base".into(), vec![rule("a.b", true)]),
-            RustpermsOperation::GroupAddParentGroups("child".into(), vec!["base".into()]),
+            RustpermsOperation::GroupAddGroupsToInherit("child".into(), vec!["base".into()]),
             RustpermsOperation::GroupAddUsers("child".into(), vec!["user1".into()]),
         ].into()).await;
 
@@ -367,7 +383,7 @@ mod tests {
             RustpermsOperation::GroupCreate { group_uid: "g1".into(), weight: 10 },
             RustpermsOperation::GroupCreate { group_uid: "g2".into(), weight: 20 },
             RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("x.y"), true)]),
-            RustpermsOperation::GroupAddParentGroups("g2".into(), vec!["g1".into()]),
+            RustpermsOperation::GroupAddGroupsToInherit("g2".into(), vec!["g1".into()]),
             RustpermsOperation::GroupAddUsers("g2".into(), vec!["u".into()]),
         ].into()).await;
 
@@ -383,8 +399,8 @@ mod tests {
             RustpermsOperation::GroupCreate { group_uid: "g1".into(), weight: 50 },
             RustpermsOperation::GroupCreate { group_uid: "g2".into(), weight: 60 },
             RustpermsOperation::GroupUpdatePerms("g1".into(), vec![(path("a.b"), true)]),
-            RustpermsOperation::GroupAddParentGroups("g1".into(), vec!["g2".into()]),
-            RustpermsOperation::GroupAddParentGroups("g2".into(), vec!["g1".into()]),
+            RustpermsOperation::GroupAddGroupsToInherit("g1".into(), vec!["g2".into()]),
+            RustpermsOperation::GroupAddGroupsToInherit("g2".into(), vec!["g1".into()]),
             RustpermsOperation::GroupAddUsers("g1".into(), vec!["u".into()]),
         ].into()).await;
 

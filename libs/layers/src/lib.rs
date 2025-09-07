@@ -9,7 +9,7 @@ pub use tracing;
 
 env_config!(
     ".env" => ENV = EnvConfig{
-        REDIS_TOKEN_DB : String = "4".to_string(),
+        // REDIS_TOKEN_DB : String = "4".to_string(),
         REDIS_PORT : u16,
         REDIS_URL : String,
         TURNSTILE_SECRET : String,

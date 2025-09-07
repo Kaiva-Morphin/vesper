@@ -17,19 +17,23 @@ pub struct AppState {
 
 env_config!(
     ".env" => ENV = Env {
-        SERVICE_FATHER_PORT : u16
+        SERVICE_FATHER_PORT : u16,
+        BEBRA: String = "asd".to_string(),
     }
 );
 
 #[tokio::main]
 async fn main() -> Result<()>{
     let mut service = service::Service::begin();
-
-    let state = AppState{
+    let state = AppState {
         // db: db::open_database_connection().await?,
         // redis_tokens: RedisConn::build(),
         // publisher: build_publisher().await?
     };
+
+    
+
+
 
     let timeout_layer = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(|_: axum::BoxError| async {

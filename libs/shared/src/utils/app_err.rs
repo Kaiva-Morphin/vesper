@@ -41,3 +41,17 @@ impl<T> ToResponseBody<T> for anyhow::Result<T, anyhow::Error>
         }
     }
 }
+
+impl<T> ToResponseBody<T> for Result<T, String> {
+    fn trough_app_err(self) -> Result<T, Response<Body>> {
+        match self {
+            Ok(v) => Ok(v),
+            Err(e) =>{
+                error!("{}", e);
+                Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                ).into_response()
+            )},
+        }
+    }
+}

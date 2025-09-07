@@ -21,7 +21,6 @@ members = [
     "services/notifier", 
     "services/init", 
     "libs/perms", 
-    "services/store", 
     # "services/old-auth",
 ]
 resolver = "2"

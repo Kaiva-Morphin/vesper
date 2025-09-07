@@ -5,9 +5,10 @@ use axum::{
     error_handling::HandleErrorLayer, http::{HeaderValue, Request, StatusCode}, middleware::Next, response::IntoResponse, routing::{delete, get, post, put}, Router
 };
 use endpoints::{login::login, logout_other::logout_other, recovery_password::{recovery_password, request_password_recovery}, refresh::refresh_tokens, register::{register, request_register_code}, set_refresh_rules::set_refresh_rules, username::check_user_uid};
+use layers::rustperms::PermissionMiddlewareBuilder;
 use message_broker::publisher::build_publisher;
-use shared::env_config;
-use redis_utils::redis::RedisTokens;
+use shared::{env_config, router};
+use redis_utils::redis::RedisConn;
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
 use tower_governor::{governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer};
 use tower_http::{catch_panic::CatchPanicLayer, cors::{Any, CorsLayer}};
@@ -17,20 +18,21 @@ use tracing::error;
 mod endpoints;
 mod repository;
 
-use rustperms_nodes::proto::rustperms_master_proto_client::RustpermsMasterProtoClient;
+use rustperms_nodes::{connect_replica, proto::{rustperms_master_proto_client::RustpermsMasterProtoClient, rustperms_replica_proto_client::RustpermsReplicaProtoClient}};
 
 #[derive(Clone)]
 pub struct AppState {
     pub db : sea_orm::DatabaseConnection, // arc doesn't needed https://github.com/SeaQL/sea-orm/blob/3203a6c7ef4f737ed4ab5ee0491cf3c45d9cd71e/examples/axum_example/api/src/lib.rs#L42-L63
-    pub redis_tokens: RedisTokens, // also arc
+    pub redis: RedisConn, // also arc
     pub publisher: Arc<Context>,
     pub google_client: GoogleClient,
     pub rustperms_master: RustpermsMasterProtoClient<tonic::transport::Channel>,
+    pub rustperms_replica: RustpermsReplicaProtoClient<tonic::transport::Channel>
 }
 
 use anyhow::Result;
 
-use crate::endpoints::{delete::delete_account, oauth::{build_google_client, login_discord, login_google, oauth_callback, oauth_login, oauth_register, GoogleClient}, timestamp::get_timestamp};
+use crate::endpoints::{delete::delete_account, logout::logout, oauth::{build_google_client, login_discord, login_google, oauth_callback, oauth_login, oauth_register, GoogleClient}, timestamp::get_timestamp};
 
 env_config!(
     ".env" => ENV = Env {
@@ -62,14 +64,17 @@ env_config!(
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut service = service::Service::begin();
-    let m = rustperms_nodes::connect_master().await?;
+    let replica = connect_replica().await?;
     let state = AppState{
         db: db::open_database_connection().await?,
-        redis_tokens: RedisTokens::default().await,
+        redis: RedisConn::default().await,
         publisher: Arc::new(build_publisher().await?),
         google_client: build_google_client(),
-        rustperms_master: m,
+        rustperms_master: rustperms_nodes::connect_master().await?,
+        rustperms_replica: replica.clone()
     };
+
+    let p = PermissionMiddlewareBuilder::new(replica);
 
     let timeout_layer = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(|_: axum::BoxError| async {
@@ -105,39 +110,45 @@ async fn main() -> Result<()> {
        }
    });
 
+   
+
    // TODO!: DEV ONLY
    let cors = CorsLayer::new()
         .allow_origin("http://localhost:1420".parse::<axum::http::HeaderValue>().unwrap())
         .allow_methods(Any)
         .allow_headers(Any)
         .max_age(Duration::from_secs(3600));
-    
-    service.route(
-        Router::new()
-            .route("/api/auth/account", post(register))
-            .route("/api/auth/account", delete(delete_account))
-            .route("/api/auth/account/uid_check", get(check_user_uid).layer(GovernorLayer {config: governor_conf,}))
-            .route("/api/auth/account/request_register_code", post(request_register_code))
 
-            .route("/api/auth/session", post(login))
-            .route("/api/auth/session", delete(logout_other))
+        service.route(
 
-            .route("/api/auth/tokens/refresh", post(refresh_tokens))
-            .route("/api/auth/tokens/rules", put(set_refresh_rules))
+        router!(
+            p,
+            "/api/auth" : () => {
+                post "/account" -> register
+                delete "/account" -> delete_account
+                get "/account/uid_check" -> check_user_uid
+                post "/account/request_register_code" -> request_register_code
 
-            .route("/api/auth/password_recovery", get(request_password_recovery))
-            .route("/api/auth/password_recovery", post(recovery_password))
+                post "/session" -> login
+                delete "/session" -> logout
+                delete "/sessions" -> logout_other
 
-            .route("/api/auth/oauth", get(oauth_callback)) //.layer(axum::middleware::from_fn(add_coop))
+                post "/tokens/refresh" -> refresh_tokens
+                put "/tokens/rules" -> set_refresh_rules
 
-            .route("/api/auth/google", get(login_google))
-            .route("/api/auth/discord", get(login_discord))
+                get "/password_recovery" -> request_password_recovery
+                post "/password_recovery" -> recovery_password
 
-            .route("/api/auth/oauth/account", post(oauth_register))
-            .route("/api/auth/oauth/session", post(oauth_login))
+                get "/oauth" -> oauth_callback
+                get "/google" -> login_google
+                get "/discord" -> login_discord
 
-            .route("/api/auth/timestamp", get(get_timestamp))
+                post "/oauth/account" -> oauth_register
+                post "/oauth/session" -> oauth_login
 
+                get "/timestamp" -> get_timestamp
+            }
+        )
             .with_state(state)
             .layer(cors)
             .layer(default_layer)

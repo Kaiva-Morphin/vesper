@@ -168,7 +168,7 @@ impl AppState {
         let email_code = EmailCode::recovery(email.clone(), raw);
         self.send_email(email_code.clone().to_email()).await?;
         info!("Recovery code in redis!");
-        self.redis_tokens.set_code(email_code).await?;
+        self.redis.set_code(email_code).await?;
         Ok(())
     }
 
@@ -182,7 +182,7 @@ impl AppState {
         let email_code = EmailCode::register(email);
         info!("Generated code: {}", email_code.code);
         self.send_email(email_code.clone().to_email()).await?;
-        self.redis_tokens.set_code(email_code).await?;
+        self.redis.set_code(email_code).await?;
         info!("Register code in redis!");
         Ok(())
     }
@@ -220,10 +220,10 @@ impl AppState {
             code,
             email
         };
-        self.redis_tokens.verify_code(email_code).await
+        self.redis.verify_code(email_code).await
     }
     pub async fn recovery_password(&self, code: &String, new_password: String) -> Result<Option<()>> {
-        if let Some(email) = self.redis_tokens.pop_recovery_email(code).await? {
+        if let Some(email) = self.redis.pop_recovery_email(code).await? {
             self.set_password(&email, new_password).await?;
             self.send_changed_notification(email, ChangedField::Password).await?;
             return Ok(Some(()));

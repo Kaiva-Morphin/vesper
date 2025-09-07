@@ -71,19 +71,32 @@ where
             .and_then(|h| h.to_str().ok())
             .and_then(|v| v.strip_prefix("Bearer "))
             .map(|token| token.to_string());
-        let token : Option<AccessTokenPayload> = if let Some(header_value) = auth_header {
+        let query_token = req
+            .uri()
+            .query()
+            .and_then(|q| {
+                let params: Vec<(String, String)> = form_urlencoded::parse(q.as_bytes())
+                    .map(|(k, v)| (k.into_owned(), v.into_owned()))
+                    .collect();
+                params
+                    .into_iter()
+                    .find(|(k, _)| k == "token")
+                    .map(|(_, v)| v)
+            });
+        let token_value = auth_header.or(query_token);
+        let token : Option<AccessTokenPayload> = if let Some(token_value) = token_value {
             // if let Some(token) = header_value.strip_prefix("Bearer ") {
-                TokenEncoder::decode_access(header_value.to_string())
+                TokenEncoder::decode_access(token_value.to_string())
             // } else {None}
         } else {None};
         if let Some(decoded_token) = token {
-            info!("Auth pass_unauthorized. User: {}", decoded_token.user);
+            info!("Auth passed. User: {}", decoded_token.user);
             req.extensions_mut().insert(decoded_token);
             let fut = self.service.call(req);
             Box::pin(fut)
         } else {
             if self.pass_unauthorized {
-                info!("Auth failed, passing unauthorized as guest.");
+                info!("Auth failed, passing unauthorized as a guest.");
                 let fut = self.service.call(req);
                 return Box::pin(fut)
             }

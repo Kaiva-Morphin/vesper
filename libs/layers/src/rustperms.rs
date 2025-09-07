@@ -24,11 +24,14 @@ pub enum PermissionKind {
 }
 
 impl PermissionKind {
-    pub fn try_complete(self, kvs: Option<&ExtractedPathKV>) -> Option<String> {
+    pub fn try_complete(self, kvs: Option<&ExtractedPathKV>, user_id: &str) -> Option<String> {
         match self {
             Self::NoPat { permission } => Some(permission),
             Self::Pattern { incomplete, replace } => {
                 let mut permission = incomplete.clone();
+                if user_id != "" {
+                    permission = permission.replace("{from_access}", user_id);
+                }
                 info!("Extracted: {:?}", kvs);
                 if let Some(ExtractedPathKV(kvs)) = kvs {
                     for (in_brackets, without_brackets) in replace {
@@ -150,7 +153,7 @@ where
         let mut client = self.perm_bundle.rustperms_client.clone();
         let on_fail = Ok(Response::builder().status(self.perm_bundle.on_fail).body(Body::empty()).unwrap());
         let kvs = req.extensions().get::<ExtractedPathKV>();
-        let permission = self.perm_bundle.permission.clone().try_complete(kvs);
+        let permission = self.perm_bundle.permission.clone().try_complete(kvs, &user_uid);
         let Some(permission) = permission else {return Box::pin(async {on_fail})};
         let next = self.service.call(req);
         Box::pin(async move { 
@@ -206,8 +209,13 @@ where
 /// let p = PermissionMiddlewareBuilder::new(...)
 /// route("/user/{id}", <handler>)
 ///     .layer(p.build("vesper.perm.{id}").await?)
-/// 
 /// // binds {id} to {id}
+/// ```
+/// Also, you can get guid from access token - use reserved {from_access} in your perm
+/// ```ignore
+/// route("/user/edit", <handler>)
+///     .layer(p.build("vesper.edit.{from_access}").await?)
+/// 
 /// ```
 /// ## DON'T CHAIN IT LIKE THAT:
 /// ```ignore

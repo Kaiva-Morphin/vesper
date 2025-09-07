@@ -28,23 +28,24 @@ fn main() -> anyhow::Result<()> {
     
     
 
-    let cert_path = format!("{}/../../certs/http/fullchain.pem", env!("CARGO_MANIFEST_DIR"));
-    let key_path = format!("{}/../../certs/http/privkey.pem", env!("CARGO_MANIFEST_DIR"));
+    let cert_path = format!("{}/../../certs/http/vesper.kaiv.space/fullchain.pem", env!("CARGO_MANIFEST_DIR"));
+    let key_path = format!("{}/../../certs/http/vesper.kaiv.space/privkey.pem", env!("CARGO_MANIFEST_DIR"));
 
     let mut tls_settings = TlsSettings::intermediate(&cert_path, &key_path).unwrap();
-    tls_settings.enable_h2();
+    // tls_settings.enable_h2();
 
-    
     let mut proxy = http_proxy_service(
         &server.configuration,
         Gateway {
         },
     );
     proxy.add_tls_with_settings("0.0.0.0:443", None, tls_settings);
+
     server.add_service(proxy);
     server.run_forever();
-
 }
+
+
 
 pub struct Gateway {
 
@@ -94,11 +95,37 @@ impl ProxyHttp for Gateway {
     ) -> Result<Box<HttpPeer>> {
         let path = session.req_header().uri.path();
         let addr = session.client_addr().unwrap().as_inet().unwrap().ip().to_string();
-
         if addr != "127.0.0.1" && addr != ENV.MY_IP {return Err(pingora::Error::new_str("Unknown addr!"))}
+        let is_upgrade = session
+            .req_header()
+            .headers
+            .get("upgrade")
+            .map(|v| v.to_str().map(|s| s.eq_ignore_ascii_case("websocket")).unwrap_or(false))
+            .unwrap_or(false);
+
+        if path.starts_with("/api/calls") && is_upgrade {
+            info!("WebSocket upgrade detected; proxying to 127.0.0.1:16110");
+            return Ok(Box::new(HttpPeer::new(("127.0.0.1", 16110), false, "127.0.0.1".to_string())));
+        }
+
         let addr = 
         if path.starts_with("/api/auth") {("127.0.0.1", 16090)}
         else if path.starts_with("/api/user") {("127.0.0.1", 16100)}
+        else if path.starts_with("/api/calls") {("127.0.0.1", 16110)}
+        else if path.starts_with("/api/store") {
+            let new_path = path.strip_prefix("/api/store").unwrap_or("/");
+            let uri = format!("http://127.0.0.1:9000{}", new_path)
+                .parse::<http::Uri>()
+                .unwrap();
+            session.req_header_mut().set_uri(uri);
+            ("127.0.0.1", 9000)
+        }
+        else if path.starts_with("/api/catbox") {
+            let uri = format!("https://catbox.moe/user/api.php").parse::<http::Uri>().unwrap();
+            session.req_header_mut().set_uri(uri);
+            session.req_header_mut().insert_header("Host", "catbox.moe").ok();
+            return Ok(Box::new(HttpPeer::new(("104.244.76.37", 443), true, "catbox.moe".to_string())));
+        }
         else if path.starts_with("/assets") {("127.0.0.1", 5000)}
         else {("127.0.0.1", 12345)};
         info!("proxying to {addr:?}");

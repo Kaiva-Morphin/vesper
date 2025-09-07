@@ -18,32 +18,32 @@ services:
   #     timeout: 5s
   #     retries: 5
 
-  rustperms_master:
-    build:
-      context: .
-      dockerfile: services/rustperms_nodes/Dockerfile.master
-    env_file:
-      - ".env"
-    ports:
-      - "${RUSTPERMS_MASTER_PORT}:${RUSTPERMS_MASTER_PORT}"
-    depends_on:
-      - postgre
-      - nats
-    restart: always
+  # rustperms_master:
+  #   build:
+  #     context: .
+  #     dockerfile: services/rustperms_nodes/Dockerfile.master
+  #   env_file:
+  #     - ".env"
+  #   ports:
+  #     - "${RUSTPERMS_MASTER_PORT}:${RUSTPERMS_MASTER_PORT}"
+  #   depends_on:
+  #     - postgre
+  #     - nats
+  #   restart: always
   
-  rustperms_replica:
-    build:
-      context: .
-      dockerfile: services/rustperms_nodes/Dockerfile.replica
-    env_file:
-      - ".env"
-    ports:
-      - "${RUSTPERMS_REPLICA_PORT}:${RUSTPERMS_REPLICA_PORT}"
-    depends_on:
-      - postgre
-      - nats
-      - rustperms_master
-    restart: always
+  # rustperms_replica:
+  #   build:
+  #     context: .
+  #     dockerfile: services/rustperms_nodes/Dockerfile.replica
+  #   env_file:
+  #     - ".env"
+  #   ports:
+  #     - "${RUSTPERMS_REPLICA_PORT}:${RUSTPERMS_REPLICA_PORT}"
+  #   depends_on:
+  #     - postgre
+  #     - nats
+  #     - rustperms_master
+  #   restart: always
 
   dragonfly:
     env_file:
@@ -92,14 +92,14 @@ services:
       - "${NATS_MONITOR_PORT}:8222"
     command: ["-js"] # todo: add storage?
   
-  redisinsight:
-    image: redis/redisinsight:latest
-    container_name: redisinsight
-    ports:
-      - "5540:5540"
-    volumes:
-      - redisinsight-data:/root/.redisinsight
-    restart: always
+  # redisinsight:
+  #   image: redis/redisinsight:latest
+  #   container_name: redisinsight
+  #   ports:
+  #     - "5540:5540"
+  #   volumes:
+  #     - redisinsight-data:/root/.redisinsight
+  #   restart: always
   
   minio:
     image: minio/minio # image: minio/minio:RELEASE.2025-04-03T14-56-28Z-cpuv1 # FOR LOW-END CPUs
@@ -112,6 +112,7 @@ services:
     entrypoint: ["/bin/sh", "/data/init.sh"]
     ports:
       - "9000:9000"
+      - "9090:9090"
     volumes:
       - ./dbs/minio:/data
     healthcheck:

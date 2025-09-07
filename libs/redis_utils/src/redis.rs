@@ -12,11 +12,8 @@ pub struct RedisConn{
 }
 
 impl RedisConn {
-    pub async fn tokens() -> Self {
-        Self::new(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, ENV.REDIS_TOKEN_DB)).await
-    }
-    pub async fn perms() -> Self {
-        Self::new(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, ENV.REDIS_PERMS_DB)).await
+    pub async fn default() -> Self {
+        Self::new(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, 0)).await
     }
     pub async fn db(db: u8) -> Self {
         Self::new(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, db)).await
@@ -30,33 +27,33 @@ impl RedisConn {
 }
 
 
-#[macro_export]
-macro_rules! redis_wrapper {
-    ($name:ident) => {
-        #[derive(Clone)]
-        pub struct $name {
-            conn: $crate::redis::RedisConn
-        }
+// #[macro_export]
+// macro_rules! redis_wrapper {
+//     ($name:ident) => {
+//         #[derive(Clone)]
+//         pub struct $name {
+//             conn: $crate::redis::RedisConn
+//         }
 
-        impl std::ops::Deref for $name {
-            type Target = $crate::redis::RedisConn;
-            fn deref(&self) -> &Self::Target {
-                &self.conn
-            }
-        }
+//         impl std::ops::Deref for $name {
+//             type Target = $crate::redis::RedisConn;
+//             fn deref(&self) -> &Self::Target {
+//                 &self.conn
+//             }
+//         }
 
-        impl std::ops::DerefMut for $name {
-            fn deref_mut(&mut self) -> &mut Self::Target {
-                &mut self.conn
-            }
-        }
+//         impl std::ops::DerefMut for $name {
+//             fn deref_mut(&mut self) -> &mut Self::Target {
+//                 &mut self.conn
+//             }
+//         }
 
-        impl From<$crate::redis::RedisConn> for $name {
-            fn from(value: $crate::redis::RedisConn) -> Self {
-                Self { conn: value }
-            }
-        }
-    };
-}
+//         impl From<$crate::redis::RedisConn> for $name {
+//             fn from(value: $crate::redis::RedisConn) -> Self {
+//                 Self { conn: value }
+//             }
+//         }
+//     };
+// }
 
-redis_wrapper!(RedisTokens);
+// redis_wrapper!(RedisTokens);

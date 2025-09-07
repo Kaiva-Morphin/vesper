@@ -7,7 +7,7 @@ use bb8_redis::redis::AsyncCommands;
 use layers::logging::UserInfoExt;
 use oauth2::{basic::{BasicClient, BasicErrorResponseType, BasicTokenType}, AuthorizationCode, ClientId, CsrfToken, EmptyExtraTokenFields, EndpointNotSet, EndpointSet, RedirectUrl, RevocationErrorResponseType, Scope, StandardErrorResponse, StandardRevocableToken, StandardTokenIntrospectionResponse, StandardTokenResponse, TokenResponse};
 use postgre_entities::user_data;
-use redis_utils::redis::RedisTokens;
+use redis_utils::redis::RedisConn;
 use serde::{Deserialize, Serialize};
 use shared::{tokens::jwt::RefreshRules, utils::{app_err::AppErr, validation::RegisterValidations}, uuid::Uuid};
 
@@ -109,7 +109,7 @@ pub struct TempLoginToken {
 }
 
 
-trait TempTokenStore {
+pub trait TempTokenStore {
     async fn get_temp_register(&self, id: &str) -> Result<Option<TempRegistrationToken>>;
     async fn rm_temp(&self, id: &str) -> Result<()>;
     async fn put_temp_register(&self, id: &str, token: TempRegistrationToken) -> Result<()>;
@@ -122,7 +122,7 @@ fn id_to_key(id: &str) -> String {
     format!("TEMP_TOKEN:{id}")
 }
 
-impl TempTokenStore for RedisTokens {
+impl TempTokenStore for RedisConn {
     async fn rm_temp(&self, id: &str) -> Result<()> {
         let mut conn = self.pool.get().await?;
         let _ : () = conn.del(id_to_key(id)).await?;
@@ -236,12 +236,12 @@ pub async fn oauth_callback(
     match action {
         Ok(l) => {
             tracing::info!("Login");
-            state.redis_tokens.put_temp_login(&id.to_string(), l).await.map_err(|_|(StatusCode::INTERNAL_SERVER_ERROR).into_response())?;
+            state.redis.put_temp_login(&id.to_string(), l).await.map_err(|_|(StatusCode::INTERNAL_SERVER_ERROR).into_response())?;
             Ok(Redirect::temporary(&format!("/oauth?login={id}&state={}", query.state)).into_response())
         }
         Err(r) => {
             tracing::info!("Register");
-            state.redis_tokens.put_temp_register(&id.to_string(), r).await.map_err(|_|(StatusCode::INTERNAL_SERVER_ERROR).into_response())?;
+            state.redis.put_temp_register(&id.to_string(), r).await.map_err(|_|(StatusCode::INTERNAL_SERVER_ERROR).into_response())?;
             Ok(Redirect::temporary(&format!("/oauth?register={id}&state={}", query.state)).into_response())
         }
     }
@@ -278,14 +278,14 @@ pub async fn oauth_register(
     if let Err(msg) = req.validate() {return Ok((StatusCode::BAD_REQUEST, msg).into_response())};
     #[cfg(not(feature = "disable_turnstile"))]
     if !verify_turnstile(request_body.turnstile_token.clone(), get_user_ip(&headers)).await {return Ok((StatusCode::BAD_REQUEST, "Turnstile failed").into_response())};
-    let Some(stored) = state.redis_tokens.get_temp_register(&req.temp_token).await? else {return Ok((StatusCode::UNAUTHORIZED).into_response())};
+    let Some(stored) = state.redis.get_temp_register(&req.temp_token).await? else {return Ok((StatusCode::UNAUTHORIZED).into_response())};
     let r = state.register_user(req.uid.clone(), req.uid, stored.email.clone(), req.password, stored.google_id, stored.discord_id).await?;
     let Ok((user_id, rules)) = r else {
         return Ok((StatusCode::CONFLICT, r.err().unwrap()).into_response())
     };
     let jar = generate_and_put_refresh(jar, &state, &user_id, user_info, stored.email, rules).await?;
     let access_response = generate_access(user_id)?;
-    state.redis_tokens.rm_temp(&req.temp_token).await.ok();
+    state.redis.rm_temp(&req.temp_token).await.ok();
     Ok((jar, access_response).into_response())
 }
 
@@ -301,9 +301,9 @@ pub async fn oauth_login(
     Extension(user_info) : Extension<UserInfoExt>,
     Json(TokenRequest { token }): Json<TokenRequest>
 ) -> Result<impl IntoResponse, AppErr>  {
-    let Some(stored) = state.redis_tokens.get_temp_login(&token).await? else {return Ok((StatusCode::UNAUTHORIZED).into_response())};
+    let Some(stored) = state.redis.get_temp_login(&token).await? else {return Ok((StatusCode::UNAUTHORIZED).into_response())};
     let jar = generate_and_put_refresh(jar, &state, &stored.uid, user_info, stored.email, stored.rules).await?;
     let access_response = generate_access(stored.uid)?;
-    state.redis_tokens.rm_temp(&token).await.ok();
+    state.redis.rm_temp(&token).await.ok();
     Ok((jar, access_response).into_response())
 }

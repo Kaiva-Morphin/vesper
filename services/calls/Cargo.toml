@@ -4,3 +4,44 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow.workspace = true
+axum = { workspace = true, features = ["ws"] }
+axum-extra.workspace = true
+postgre_entities.workspace = true
+sea-orm.workspace = true
+serde.workspace = true
+shared.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tower-http = { workspace = true, features = ["cors"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+lazy_static.workspace = true
+bcrypt.workspace = true
+regex.workspace = true
+redis_utils.workspace = true
+db = { version = "0.1.0", path = "../../libs/postgre/db" }
+message_broker.workspace = true
+bincode = { version = "2.0.0", features = ["serde"] }
+rand.workspace = true
+base64 = "0.22.1"
+service = { version = "0.1.0", path = "../../libs/service" }
+layers = { version = "0.1.0", path = "../../libs/layers" }
+bb8 = "0.9.0"
+bb8-redis = "0.21.0"
+tower_governor = "0.7.0"
+oauth = "0.0.1"
+oauth2 = { version = "5.0.0", features = ["reqwest"] }
+reqwest = { workspace = true, features = ["rustls-tls"] }
+serde_json.workspace = true
+chrono.workspace = true
+tonic.workspace = true
+rustperms_nodes = { version = "0.1.0", path = "../rustperms_nodes" }
+perms = { version = "0.1.0", path = "../../libs/perms" }
+rustperms = { version = "0.1.0", path = "../../libs/rustperms" }
+minio = "0.3.0"
+mime = "0.3.17"
+futures-util = "0.3.31"
+bytes = "1.10.1"
+url = "2.5.4"
+async-nats = {version = "0.42.0"}

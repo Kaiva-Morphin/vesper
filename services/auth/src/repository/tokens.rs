@@ -1,5 +1,6 @@
 use axum_extra::extract::CookieJar;
 use layers::logging::UserInfoExt;
+use redis_utils::redis_tokens::RedisTokens;
 use sea_orm::{prelude::Uuid, sqlx::types::chrono::Utc};
 use shared::tokens::jwt::{AccessTokenPayload, AccessTokenResponse, RefreshRules, RefreshTokenPayload, RefreshTokenRecord, TokenEncoder};
 
@@ -49,7 +50,7 @@ pub async fn generate_and_put_refresh(
     };
     let refresh_token = TokenEncoder::encode_refresh(refresh_payload)?;
     info!("Rtid {rtid}");
-    state.redis_tokens.set_refresh(refresh_record).await?;
+    state.redis.set_refresh(refresh_record).await?;
     Ok(jar.put_refresh(refresh_token))
 }
 

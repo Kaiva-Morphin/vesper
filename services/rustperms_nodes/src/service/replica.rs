@@ -53,9 +53,8 @@ pub async fn start_nats_event_listener(manager: Arc<AsyncManager>, nats_url: Str
         .await?;
 
     let consumer_name = shared::uuid::Uuid::new_v4().simple().to_string();
-    let consumer = stream.create_consumer(jetstream::consumer::push::Config {
+    let consumer = stream.create_consumer(jetstream::consumer::pull::Config {
         durable_name: Some(consumer_name.to_string()),
-        deliver_subject: inbox.clone(),
         deliver_policy: jetstream::consumer::DeliverPolicy::New,
         ack_policy: jetstream::consumer::AckPolicy::Explicit,
         ..Default::default()

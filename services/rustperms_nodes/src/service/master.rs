@@ -44,7 +44,7 @@ impl RustpermsMasterProto for MasterNode<PostgreStorage> {
     }
 }
 
-pub trait MapStatus<T> {
+pub trait MapStatus<T> {    
     fn map_status(self, status: Status) -> Result<T, Status>;
 }
 

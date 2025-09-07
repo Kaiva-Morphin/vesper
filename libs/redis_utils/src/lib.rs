@@ -1,3 +1,5 @@
+pub mod users;
+pub mod redis_cache;
 pub mod redis;
 use shared::env_config;
 
@@ -6,8 +8,8 @@ pub mod redis_tokens;
 
 env_config!(
     ".env" => ENV = EnvConfig{
-        REDIS_TOKEN_DB : u8 = 4,
-        REDIS_PERMS_DB : u8 = 5,
+        // REDIS_TOKEN_DB : u8 = 4,
+        // REDIS_PERMS_DB : u8 = 5,
         REDIS_PORT : u16,
         REDIS_URL : String,
     }

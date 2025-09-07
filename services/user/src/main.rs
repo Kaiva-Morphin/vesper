@@ -1,36 +1,60 @@
 use std::{sync::Arc, time::Duration};
 
-use axum::{error_handling::HandleErrorLayer, middleware::from_extractor, routing::get, Router};
+use axum::{error_handling::HandleErrorLayer, middleware::from_extractor, routing::{get, put}, Router};
 use layers::{auth::AuthAccessLayer, rustperms::{ExtractPath, PermissionMiddlewareBuilder}};
+use minio::s3::{creds::StaticProvider, Client};
+use redis_utils::{redis::RedisConn, redis_cache::RedisCache};
 use reqwest::StatusCode;
-use shared::utils::logger::init_logger;
+use shared::{router, utils::logger::init_logger};
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
 use tower_governor::{governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor};
 use tower_http::{catch_panic::CatchPanicLayer, cors::{Any, CorsLayer}};
 use tracing::{error, info};
 
-use crate::profile::{get_mini_profile, get_profile};
-
-
-use rustperms_nodes::proto::{CheckPermRequest};
-
-
+use crate::profile::*;
 
 
 mod profile;
+mod state;
 
 
 shared::env_config!(
     ".env" => ENV = Env {
         SERVICE_USER_PORT: u16,     
-});
+        MINIO_BUCKET_NAME: String,
+        MINIO_ROOT_USER: String,
+        MINIO_URL: String,
+        MINIO_ROOT_PASSWORD: String,
+    }
+    ".cfg" => CFG = Cfg {
+        MAX_MEDIA_MB: f32,
+        MAX_MINI_PROFILE_BG_MB: f32,
+        MAX_PROFILE_BG_MB: f32,
+        PROFILE_CACHE_TTL: u64,
+        MINIPROFILE_CACHE_TTL: u64,
+    }
+);
 
-
+use crate::profile::set_profile_background;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logger();
     let mut service = service::Service::begin();
+    let client = Client::new(
+        ENV.MINIO_URL.parse()?,
+        Some(Box::new(StaticProvider::new(
+            &ENV.MINIO_ROOT_USER,
+            &ENV.MINIO_ROOT_PASSWORD,None))),
+        None,
+        None
+    ).unwrap();
+
+    let state = state::AppState{
+        db: db::open_database_connection().await?,
+        store: client,
+        cache: RedisConn::default().await,
+    };
 
     let timeout_layer = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(|_: axum::BoxError| async {
@@ -69,38 +93,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_methods(Any)
         .allow_headers(Any)
         .max_age(Duration::from_secs(3600));
-    let mut replica = rustperms_nodes::connect_replica().await?;
-
-
-    let r = replica.get_snapshot(()).await?;
-    tracing::info!("{r:#?}");
-
-    let r = replica.check_perm(CheckPermRequest{user_uid: "".to_string(), permission: "dev.default.wildcard.123".to_string(), unset_policy: false}).await?;
-    tracing::info!("{r:#?}");
-
+    let replica = rustperms_nodes::connect_replica().await?;
     let p = PermissionMiddlewareBuilder::new(replica);
 
-    service.route(
-        Router::new()
-            .nest("/api/user/profile/{guid}", Router::new().route("/{id}", get(get_profile)).layer(p.build("dev.default.any.{id}.dev").await?))
 
-            .layer(AuthAccessLayer::allow_guests())
-            .layer(from_extractor::<ExtractPath>())
-            .layer(cors)
-            .layer(default_layer)
+    service.route(
+        router!(
+            p,
+            "/api/user/edit" : (AuthAccessLayer::only_authorized()) => {
+                put "/profile/bg" -> set_profile_background ("user.profile.edit.{from_access}.bg")
+                put "/profile/bg_url" -> set_profile_background_url ("user.profile.edit.{from_access}.bg")
+                put "/profile/theme" -> set_profile_theme ("user.profile.edit.{from_access}.theme")
+
+                put "/avatar" -> set_avatar ("user.profile.edit.{from_access}.avatar")
+                put "/avatar_url" -> set_avatar_url ("user.profile.edit.{from_access}.avatar")
+                put "/nickname" -> set_nickname ("user.profile.edit.{from_access}.nickname")
+
+                put "/miniprofile/bg" -> set_miniprofile_background ("user.miniprofile.edit.{from_access}.bg")
+                put "/miniprofile/bg_url" -> set_miniprofile_background_url ("user.miniprofile.edit.{from_access}.bg")
+                put "/miniprofile/theme" -> set_miniprofile_theme ("user.miniprofile.edit.{from_access}.theme")
+            }
+            "/api/user" : (AuthAccessLayer::allow_guests()) => {
+                get "/guids" -> get_all_users
+                get "/profile/{guid}" -> get_profile ("user.profile.view.{guid}")
+                get "/miniprofile/{guid}" -> get_miniprofile 
+            }
+        )
+        .layer(from_extractor::<ExtractPath>())
+        .layer(cors)
+        .layer(default_layer)
+        .with_state(state)
     );
     service.run(ENV.SERVICE_USER_PORT).await?;
     Ok(())
 }
-
-
-            // .route("/api/user/profile/default/any/{id}", get(get_profile)).layer(p.build("dev.default.any.{id}.dev").await?)
-            // .route("/api/user/profile/default/exact", get(get_profile)).layer(p.build("dev.default.exact").await?)
-            // .route("/api/user/profile/guest/wildcard/{id}", get(get_profile)).layer(p.build("dev.guest.wildcard.{id}").await?)
-            // .route("/api/user/profile/guest/any_wrong/{id}", get(get_profile)).layer(p.build("dev.guest.any.{id}").await?)
-            // .route("/api/user/profile/guest/any/{id}", get(get_profile)).layer(p.build("dev.guest.any.{id}.dev").await?)
-            // .route("/api/user/profile/guest/exact", get(get_profile)).layer(p.build("dev.guest.exact").await?)
-            // .route("/api/user/profile/logged/wildcard/{id}", get(get_profile)).layer(p.build("dev.logged.wildcard.{id}").await?)
-            // .route("/api/user/profile/logged/any_wrong/{id}", get(get_profile)).layer(p.build("dev.logged.any.{id}").await?)
-            // .route("/api/user/profile/logged/any/{id}", get(get_profile)).layer(p.build("dev.logged.any.{id}.dev").await?)
-            // .route("/api/user/profile/logged/exact", get(get_profile)).layer(p.build("dev.logged.exact").await?)

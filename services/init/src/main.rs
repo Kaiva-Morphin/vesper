@@ -1,5 +1,8 @@
 use migration::MigratorTrait;
+use postgre_entities::user_data;
+use redis_utils::users::RedisUsers;
 use rustperms_nodes::proto::{rustperms_master_proto_client::RustpermsMasterProtoClient, WriteRequest};
+use sea_orm::EntityTrait;
 use shared::utils::logger::init_logger;
 use tracing::info;
 
@@ -8,6 +11,7 @@ shared::env_config!(
     ".env" => ENV = Env {
         RUSTPERMS_MASTER_ADDR: String,
         RUSTPERMS_MASTER_PORT: u16,
+        
 });
 
 #[tokio::main]
@@ -18,19 +22,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     shared::tracing::info!("Running migrations...");
     migration::Migrator::up(&conn, None).await?;
     shared::tracing::info!("Migrations done!");
-
-
-    
+    info!("Filling redis with users...");
+    let redis = redis_utils::redis::RedisConn::default().await;
+    let users = user_data::Entity::find().all(&conn).await?;
+    let users = users.into_iter().map(|u| (u.guid, u.uid)).collect::<Vec<_>>();
+    redis.fill_users(users).await?;
+    info!("Users filled!");
     shared::tracing::info!("Initializing default groups...");
     let mut node = RustpermsMasterProtoClient
         ::connect(format!("http://{}:{}", ENV.RUSTPERMS_MASTER_ADDR, ENV.RUSTPERMS_MASTER_PORT)).await
         .inspect_err(|e|tracing::error!("Can't establish connection with master!: {e}"))?;
-
     let mut ops =  perms::groups::init_default();
-    ops.extend(perms::user::profile::grant_default().into_iter());
+    ops.extend(perms::groups::fill_with_defaults().into_iter());
     let delta = rustperms::prelude::RustpermsDelta::from(ops);
     node.write_changes(WriteRequest{serialized_delta: delta.serialize_to_string()?}).await?;
     shared::tracing::info!("Default groups initialized!");
-
     Ok(())
 }

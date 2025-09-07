@@ -1,5 +1,6 @@
 
 use crate::{endpoints::login::LoginBody, AppState};
+use redis_utils::{redis_tokens::RedisTokens, users::RedisUsers};
 use rustperms::prelude::RustpermsDelta;
 use rustperms_nodes::proto::WriteRequest;
 use sea_orm::{prelude::Uuid, sea_query::Expr as QExpr, sqlx::Transaction, QuerySelect, *};
@@ -22,10 +23,9 @@ pub enum OauthLogin {
 
 impl AppState {
     pub async fn is_uid_available(&self, uid: String) -> Result<bool> {
-        let v = user_data::Entity::find()
-            .filter(user_data::Column::Uid.eq(uid))
-            .one(&self.db).await;
-        Ok(v?.is_none())
+        let uid = uid.to_lowercase();
+        let v = self.redis.get_user_guid(&uid).await?;
+        Ok(v.is_none())
     }
 
     pub async fn login(&self, login_body: &LoginBody) -> Result<Option<(Uuid, RefreshRules)>> {
@@ -76,6 +76,8 @@ impl AppState {
         let Some(user) = user else {return Ok(false)};
         if !bcrypt::verify(&password, &user.password)? {return Ok(false)}
         let d : RustpermsDelta = perms::user::delete_user(&user.guid).into();
+        self.redis.remove_user(&user.guid, &user.uid).await.inspect_err(|e| error!("Failed to remove user from redis: {e}")).ok();
+        self.redis.rm_all_refresh(&user.guid).await.inspect_err(|e| error!("Failed to remove refresh tokens from redis: {e}")).ok();
         user.delete(&self.db).await?;
         if let Ok(d) = d.serialize_to_string() {
             self.rustperms_master.clone().write_changes(WriteRequest{serialized_delta: d})
@@ -136,7 +138,6 @@ impl AppState {
         Ok(())
     }
 
-
     pub async fn register_user(
         &self,
         uid: String,
@@ -149,10 +150,11 @@ impl AppState {
         let user_guid = Uuid::new_v4();
         let allow_suspicious_refresh = false;
         let warn_suspicious_refresh = true;
+        let uid = uid.to_lowercase();
 
         let user = user_data::ActiveModel {
             guid: Set(user_guid),
-            uid: Set(uid.to_lowercase()),
+            uid: Set(uid.clone()),
             nickname: Set(nickname),
             password: Set(hash(password, DEFAULT_COST)?),
             email: Set(email),
@@ -168,7 +170,7 @@ impl AppState {
             Ok(_m) => {
                 info!("Successful registration!");
                 let mut u = perms::user::create_user(&user_guid);
-                u.extend(perms::user::profile::grant_default_for_user(&user_guid));
+                u.extend(perms::user::grant_default_for_user(&user_guid));
                 let d : RustpermsDelta = u.into();
                 if let Ok(d) = d.serialize_to_string() {
                     self.rustperms_master.clone().write_changes(WriteRequest{serialized_delta: d})
@@ -200,8 +202,13 @@ impl AppState {
                     return Ok(Err("Failed to create user miniprofile".to_string()));
                 }
                 
+                if let Err(e) = self.redis.add_user(&user_guid, &uid).await {
+                    error!("Failed to set user guid in redis: {e}");
+                    tsx.rollback().await?;
+                    return Ok(Err("Failed to set user guid in redis".to_string()));
+                }
+                
                 tsx.commit().await?;
-
                 Ok(Ok((
                     user_guid,
                     RefreshRules{

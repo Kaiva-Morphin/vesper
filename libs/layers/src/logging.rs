@@ -37,6 +37,7 @@ pub async fn logging_middleware(mut req: Request<Body>, next: Next) -> Response 
     let span = Span::current();
     let user_info = UserInfoExt::from_headers(req.headers());
     info!("Received request on: {}. {}", req.uri().to_string(), user_info);
+    // TODO! : MOVE SOMEWHERE ELSE
     req.extensions_mut().insert(user_info);
     let response = next.run(req).instrument(span).await;
     info!("Response status: {:?}", response.status());
@@ -46,13 +47,12 @@ pub async fn logging_middleware(mut req: Request<Body>, next: Next) -> Response 
 #[macro_export]
 macro_rules! make_unique_span {
     ($name:ident) => {
-        let id : $crate::uuid::Uuid = $crate::uuid::Uuid::new_v4();
-        let $name = $crate::tracing::info_span!("", %id);
+        let $name = $crate::tracing::info_span!("", %format!("\x1b[90m{}\x1b[0m", $crate::uuid::Uuid::new_v4().simple()));
     };
 
     ($prefix:expr, $name:ident) => {
-        let id : $crate::uuid::Uuid = $crate::uuid::Uuid::new_v4();
-        let $name = $crate::tracing::info_span!($prefix, %id);
+        let id = format!("\x1b[90m{}\x1b[0m", $crate::uuid::Uuid::new_v4().simple());
+        let $name = $crate::tracing::info_span!($prefix, "id" = %id);
     };
 }
 

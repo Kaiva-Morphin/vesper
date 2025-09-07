@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow.workspace = true
-axum.workspace = true
+axum = { workspace = true, features = ["multipart"] }
 axum-extra.workspace = true
 postgre_entities.workspace = true
 sea-orm.workspace = true
@@ -39,3 +39,8 @@ tonic.workspace = true
 rustperms_nodes = { version = "0.1.0", path = "../rustperms_nodes" }
 perms = { version = "0.1.0", path = "../../libs/perms" }
 rustperms = { version = "0.1.0", path = "../../libs/rustperms" }
+minio = "0.3.0"
+mime = "0.3.17"
+futures-util = "0.3.31"
+bytes = "1.10.1"
+url = "2.5.4"

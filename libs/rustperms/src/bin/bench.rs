@@ -141,6 +141,7 @@ fn main() {
         //     &p("deep.a.b.c.d.e.f.g.h.i.j.k.l.nope"),
         //     None,
         // );
+        println!("  worst: 4x*, 14 сегментов, промах  [ПРОПУЩЕНО] - avg time: 29331 ns/op");
         run(
             "worst: 4x*, 14 сегментов, попадание",
             &tree,

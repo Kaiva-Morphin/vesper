@@ -21,6 +21,7 @@ logs
 # Local env files
 *.env*
 !example.*.env
+!.env.example
 
 # rust
 /target

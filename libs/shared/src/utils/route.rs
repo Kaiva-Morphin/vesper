@@ -16,7 +16,7 @@ macro_rules! router {
             $(
                 let mut route = axum::routing::$method($handler);
                 $(
-                    route = route.layer($p.build($perm).await?);
+                    route = route.layer($p.build($perm)?);
                 )?
                 nested_router = nested_router.route($path, route);
             )*

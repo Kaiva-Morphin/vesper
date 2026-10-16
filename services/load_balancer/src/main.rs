@@ -28,18 +28,19 @@ fn main() -> anyhow::Result<()> {
     
     
 
-    let cert_path = format!("{}/../../certs/http/vesper.kaiv.space/fullchain.pem", env!("CARGO_MANIFEST_DIR"));
-    let key_path = format!("{}/../../certs/http/vesper.kaiv.space/privkey.pem", env!("CARGO_MANIFEST_DIR"));
+    // let cert_path = format!("{}/../../certs/http/vesper.kaiv.space/fullchain.pem", env!("CARGO_MANIFEST_DIR"));
+    // let key_path = format!("{}/../../certs/http/vesper.kaiv.space/privkey.pem", env!("CARGO_MANIFEST_DIR"));
 
-    let mut tls_settings = TlsSettings::intermediate(&cert_path, &key_path).unwrap();
-    // tls_settings.enable_h2();
+    // let mut tls_settings = TlsSettings::intermediate(&cert_path, &key_path).unwrap();
+    // // tls_settings.enable_h2();
 
     let mut proxy = http_proxy_service(
         &server.configuration,
         Gateway {
         },
     );
-    proxy.add_tls_with_settings("0.0.0.0:443", None, tls_settings);
+    // proxy.add_tls_with_settings("0.0.0.0:443", None, tls_settings);
+    proxy.add_tcp("127.0.0.1:80");
 
     server.add_service(proxy);
     server.run_forever();

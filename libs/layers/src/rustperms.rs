@@ -68,7 +68,7 @@ impl CompletePerm for String {
 }
 
 impl PermissionMiddlewareBundle {
-    pub async fn new(permission: String, rustperms_client: RustpermsReplicaProtoClient<tonic::transport::Channel>, on_fail: StatusCode) -> anyhow::Result<Self> {
+    pub fn new(permission: String, rustperms_client: RustpermsReplicaProtoClient<tonic::transport::Channel>, on_fail: StatusCode) -> anyhow::Result<Self> {
         permission.contains("*").then(|| panic!("Can't use wildcard in permission definition"));
         let c = REGEX.captures_iter(&permission)
             .filter_map(|m| m.get(1).map(|v| (format!("{{{}}}", v.as_str()), v.as_str().to_string())))
@@ -90,9 +90,9 @@ pub struct PermissionAccessLayer(PermissionMiddlewareBundle);
 const REGEX : Lazy<Regex> = Lazy::new(||Regex::new(r"(?:\{)([^\{\}]+)(?:\})").expect("Can't parse permission pattern regex!"));
 
 impl PermissionAccessLayer {
-    pub async fn new(permission: String, rustperms_client: RustpermsReplicaProtoClient<tonic::transport::Channel>, on_fail: StatusCode) -> anyhow::Result<Self> {
+    pub fn new(permission: String, rustperms_client: RustpermsReplicaProtoClient<tonic::transport::Channel>, on_fail: StatusCode) -> anyhow::Result<Self> {
         info!("Creating permission layer for {}", permission);
-        Ok(Self(PermissionMiddlewareBundle::new(permission, rustperms_client, on_fail).await?))
+        Ok(Self(PermissionMiddlewareBundle::new(permission, rustperms_client, on_fail)?))
     }
 
     pub fn hidden(mut self) -> Self {
@@ -231,7 +231,7 @@ impl PermissionMiddlewareBuilder {
         Self {rustperms_client}
     }
 
-    pub async fn build(&self, path: &str) -> anyhow::Result<PermissionAccessLayer> {
-        PermissionAccessLayer::new(path.to_string(), self.rustperms_client.clone(), StatusCode::UNAUTHORIZED).await
+    pub fn build(&self, path: &str) -> anyhow::Result<PermissionAccessLayer> {
+        PermissionAccessLayer::new(path.to_string(), self.rustperms_client.clone(), StatusCode::UNAUTHORIZED)
     }
 }

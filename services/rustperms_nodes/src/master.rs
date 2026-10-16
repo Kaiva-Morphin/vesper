@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
     init_logger();
     tracing::info!("Connecting to pg...");
 
-    let addr = format!("[::1]:{}", ENV.RUSTPERMS_MASTER_PORT).parse()?;
+    let addr = format!("0.0.0.0:{}", ENV.RUSTPERMS_MASTER_PORT).parse()?;
     // connect to bd
     let storage = db::PostgreStorage::connect(&ENV.DATABASE_URL).await?;
     storage.init_schema().await?;

@@ -3,6 +3,8 @@ use axum_extra::extract::CookieJar;
 use layers::logging::UserInfoExt;
 use redis_utils::redis_tokens::RedisTokens;
 use shared::{tokens::jwt::{RefreshRules, RefreshTokenPayload, RefreshTokenRecord, TokenEncoder}, utils::app_err::ToResponseBody};
+use tracing::info;
+use utoipa::openapi::info;
 
 use crate::{repository::{cookies::TokenCookie, tokens::{generate_access, generate_and_put_refresh}}, AppState};
 
@@ -24,12 +26,16 @@ impl<'a> RefreshProcessor<'a> {
         state: &'a AppState,
         user_info: UserInfoExt,
     ) -> Result<Self, Response<Body>> {
+        info!("Refreshing tokens for user: {}", user_info);
+        info!("Jar: {:#?}", jar);
         let Some(refresh_token_string) = jar.get_refresh() else {return Err((jar.rm_refresh(), StatusCode::UNAUTHORIZED).into_response())};
+        info!("Refresh: {}", refresh_token_string);
         jar = jar.rm_refresh();
         let Some(refresh_payload) = TokenEncoder::decode_refresh(refresh_token_string) else {return Err((jar, StatusCode::UNAUTHORIZED).into_response())};
         let record = state.redis.pop_refresh(&refresh_payload.rtid).await.trough_app_err()?;
         let Some(record) = record else {return Err((jar.rm_refresh(), StatusCode::UNAUTHORIZED).into_response())};
         let refresh_rules = refresh_payload.rules.clone();
+        info!("Processor created!");
         Ok(RefreshProcessor {
             jar,
             state,

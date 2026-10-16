@@ -50,3 +50,7 @@ tonic.workspace = true
 rustperms_nodes = { version = "0.1.0", path = "../rustperms_nodes" }
 perms = { version = "0.1.0", path = "../../libs/perms" }
 rustperms = { version = "0.1.0", path = "../../libs/rustperms" }
+utoipa = { version = "5.4.0", features = ["axum_extras", "uuid"] }
+utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+utoipa-scalar = { version = "0.3.0", features = ["axum"] }
+utoipa-axum = "0.2.0"

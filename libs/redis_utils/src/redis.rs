@@ -1,31 +1,30 @@
-
 use bb8_redis::RedisConnectionManager;
 
 use crate::ENV;
 
-
-
-
 #[derive(Clone)]
-pub struct RedisConn{
-    pub pool: bb8::Pool<RedisConnectionManager>
+pub struct RedisConn {
+    pub pool: bb8::Pool<RedisConnectionManager>,
 }
 
 impl RedisConn {
     pub async fn default() -> Self {
-        Self::new(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, 0)).await
+        Self::new(format!("redis://{}/{}", ENV.KVDB_URL, 0)).await
     }
     pub async fn db(db: u8) -> Self {
-        Self::new(format!("redis://{}:{}/{}", ENV.REDIS_URL, ENV.REDIS_PORT, db)).await
+        Self::new(format!("redis://{}/{}", ENV.KVDB_URL, db)).await
     }
     pub async fn new(conn_string: String) -> Self {
-        let redis_client = RedisConnectionManager::new(conn_string).expect("Can't connect to redis!");
-        RedisConn{
-            pool: bb8::Pool::builder().build(redis_client).await.expect("Can't create pool for redis!")
+        let redis_client =
+            RedisConnectionManager::new(conn_string).expect("Can't connect to redis!");
+        RedisConn {
+            pool: bb8::Pool::builder()
+                .build(redis_client)
+                .await
+                .expect("Can't create pool for redis!"),
         }
     }
 }
-
 
 // #[macro_export]
 // macro_rules! redis_wrapper {

@@ -20,7 +20,9 @@ pub trait RedisUsers {
 impl RedisUsers for RedisConn {
     async fn fill_users(&self, users: Vec<(Uuid, String)>) -> Result<()> {
         let mut conn = self.pool.get().await?;
-
+        if users.len() == 0 {
+            return Ok(());
+        }
         let mut guid_to_uid: Vec<(String, String)> = Vec::new();
         let mut uid_to_guid: Vec<(String, String)> = Vec::new();
 

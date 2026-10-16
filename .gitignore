@@ -43,3 +43,5 @@ private.pem
 public.pem
 
 certs/
+
+/vesper_infra

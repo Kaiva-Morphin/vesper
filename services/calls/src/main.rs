@@ -70,9 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             p,
                 "/api/calls": (AuthAccessLayer::allow_guests()) => {
                     delete "/rooms" -> delete_all_rooms ("calls.join")
-
                     any "/" -> connect ("calls.connect")
-
                     get "/rooms" -> get_rooms ("calls.view")
                     get "/all_rooms" -> get_all_rooms ("calls.view.hidden")
                 }

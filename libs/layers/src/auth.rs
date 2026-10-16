@@ -102,9 +102,9 @@ where
             }
             info!("Auth failed!");
             Box::pin(async move {Ok(Response::builder()
-                    .status(StatusCode::UNAUTHORIZED)
-                    .body(Body::from("Unauthorized"))
-                    .unwrap())})
+                .status(StatusCode::UNAUTHORIZED)
+                .body(Body::from("Unauthorized"))
+                .unwrap())})
         }
     }
 }

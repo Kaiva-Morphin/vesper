@@ -40,9 +40,9 @@ async fn try_get_manager_from_master() -> Result<AsyncManager> {
 #[tokio::main]
 async fn main() -> Result<()> {
     init_logger();
-    let addr = format!("[::1]:{}", ENV.RUSTPERMS_REPLICA_PORT).parse()?;
+    let addr = format!("0.0.0.0:{}", ENV.RUSTPERMS_REPLICA_PORT).parse()?;
 
-    let manager = 'a: {
+    let manager = 'a : {
         if let Ok(m) = try_get_manager_from_replica().await {break 'a m};
         if let Ok(m) = try_get_manager_from_master().await {break 'a m};
         let storage = rustperms_nodes::db::PostgreStorage::single_connection(&ENV.DATABASE_URL).await?;

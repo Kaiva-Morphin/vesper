@@ -11,7 +11,6 @@ shared::env_config!(
     ".env" => ENV = Env {
         RUSTPERMS_MASTER_ADDR: String,
         RUSTPERMS_MASTER_PORT: u16,
-        
 });
 
 #[tokio::main]
@@ -32,9 +31,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut node = RustpermsMasterProtoClient
         ::connect(format!("http://{}:{}", ENV.RUSTPERMS_MASTER_ADDR, ENV.RUSTPERMS_MASTER_PORT)).await
         .inspect_err(|e|tracing::error!("Can't establish connection with master!: {e}"))?;
+    shared::tracing::info!("Connected to master!");
     let mut ops =  perms::groups::init_default();
     ops.extend(perms::groups::fill_with_defaults().into_iter());
     let delta = rustperms::prelude::RustpermsDelta::from(ops);
+    shared::tracing::info!("Sending delta to master...");
     node.write_changes(WriteRequest{serialized_delta: delta.serialize_to_string()?}).await?;
     shared::tracing::info!("Default groups initialized!");
     Ok(())

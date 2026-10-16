@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use axum::{error_handling::HandleErrorLayer, middleware::from_extractor, routing::{get, put}, Router};
+use axum::{Router, error_handling::HandleErrorLayer, extract::DefaultBodyLimit, middleware::from_extractor, routing::{get, put}};
 use layers::{auth::AuthAccessLayer, rustperms::{ExtractPath, PermissionMiddlewareBuilder}};
 use minio::s3::{creds::StaticProvider, Client};
 use redis_utils::{redis::RedisConn, redis_cache::RedisCache};
@@ -96,7 +96,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let replica = rustperms_nodes::connect_replica().await?;
     let p = PermissionMiddlewareBuilder::new(replica);
 
-
+    let limit = 
+        CFG.MAX_PROFILE_BG_MB
+        .max(CFG.MAX_MINI_PROFILE_BG_MB)
+        .max(CFG.MAX_MEDIA_MB) * 1024.0 * 1024.0;
     service.route(
         router!(
             p,
@@ -109,7 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 put "/avatar_url" -> set_avatar_url ("user.profile.edit.{from_access}.avatar")
                 put "/nickname" -> set_nickname ("user.profile.edit.{from_access}.nickname")
 
-                put "/miniprofile/bg" -> set_miniprofile_background ("user.miniprofile.edit.{from_access}.bg")
+                post "/miniprofile/bg" -> set_miniprofile_background ("user.miniprofile.edit.{from_access}.bg")
                 put "/miniprofile/bg_url" -> set_miniprofile_background_url ("user.miniprofile.edit.{from_access}.bg")
                 put "/miniprofile/theme" -> set_miniprofile_theme ("user.miniprofile.edit.{from_access}.theme")
             }
@@ -119,6 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 get "/miniprofile/{guid}" -> get_miniprofile 
             }
         )
+        .layer(DefaultBodyLimit::max(limit as usize))
         .layer(from_extractor::<ExtractPath>())
         .layer(cors)
         .layer(default_layer)

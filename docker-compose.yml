@@ -67,7 +67,7 @@ services:
       - "${DATABASE_PORT}:5432"
     volumes:
       - ./dbs/init_postgre.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./dbs/postgre-data:/var/lib/postgresql/data
+      - postgre-data:/var/lib/postgresql/data
     
   # redis:
   #   env_file:
@@ -102,7 +102,7 @@ services:
   #   restart: always
   
   minio:
-    image: minio/minio # image: minio/minio:RELEASE.2025-04-03T14-56-28Z-cpuv1 # FOR LOW-END CPUs
+    image: docker.io/pgsty/minio:RELEASE.2026-08-04T00-00-00Z # image: minio/minio:RELEASE.2025-04-03T14-56-28Z-cpuv1 # FOR LOW-END CPUs
     restart: always
     env_file:
       - ".cfg"
@@ -127,4 +127,6 @@ volumes:
   # yb_data:
   #   driver: local
   redis:
+    driver: local
+  postgre-data:
     driver: local

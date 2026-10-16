@@ -4,7 +4,6 @@ use minio::s3::types::S3Api;
 use postgre_entities::user_data;
 use postgre_entities::user_mini_profile;
 use postgre_entities::user_profile;
-use rand::rand_core::le;
 use redis_utils::redis::RedisConn;
 use redis_utils::redis_cache::RedisCache;
 use redis_utils::users::RedisUsers;
@@ -18,7 +17,7 @@ use sea_orm::QueryFilter;
 use sea_orm::QuerySelect;
 use serde::Deserialize;
 use serde::Serialize;
-use shared::default_err;
+use shared::utils::app_err::AppErr;
 use shared::{utils::app_err::ToResponseBody, uuid::Uuid};
 use sea_orm::Set;
 use sea_orm::ActiveModelTrait;
@@ -66,7 +65,7 @@ impl FileType {
     fn is_allowed_file_extension(&self, extension: &str) -> bool {
         match self {
             FileType::Any => true,
-            FileType::Image => extension.eq_ignore_ascii_case("jpg") || extension.eq_ignore_ascii_case("jpeg") || extension.eq_ignore_ascii_case("png"),
+            FileType::Image => extension.eq_ignore_ascii_case("jpg") || extension.eq_ignore_ascii_case("jpeg") || extension.eq_ignore_ascii_case("png") || extension.eq_ignore_ascii_case("gif"),
             FileType::Video => extension.eq_ignore_ascii_case("mp4") || extension.eq_ignore_ascii_case("mov") || extension.eq_ignore_ascii_case("webm"),
             FileType::Media => FileType::Image.is_allowed_file_extension(extension) || FileType::Video.is_allowed_file_extension(extension),
         }
@@ -322,7 +321,6 @@ impl AppState {
         }
     }
 
-
     pub async fn upload_file(&self, mut multipart: Multipart, name: String, allowed: FileType, limit_mb: f32) -> Result<String, Response<Body>> {
         if let Some(field) = multipart.next_field().await.map_err(|e| e.to_string()).trough_app_err()? {
             let file_name = field.file_name().map(|s| s.to_string());
@@ -341,6 +339,7 @@ impl AppState {
             let mut buffer = Vec::new();
             let mut total_size = 0usize;
 
+
             while let Some(chunk) = stream.next().await {
                 let chunk = chunk.map_err(|e| e.to_string()).trough_app_err()?;
                 total_size += chunk.len();
@@ -351,7 +350,6 @@ impl AppState {
 
                 buffer.extend_from_slice(&chunk);
             }
-
             let data = Bytes::from(buffer);
             let result = self
                 .store

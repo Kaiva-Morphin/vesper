@@ -15,12 +15,12 @@ impl TokenCookie for CookieJar {
     fn put_refresh(self, token: String) -> Self {
         let mut refresh = Cookie::new(COOKIE_REFRESH_TOKEN, token);
         // TODO! : DEV ONLY
-        // refresh.set_secure(true);
-        // refresh.set_same_site(SameSite::Strict);
-        // refresh.set_http_only(true);
+        refresh.set_same_site(SameSite::None);
+        refresh.set_http_only(true);
+        refresh.set_secure(true);
+        refresh.set_path("/api/auth");
         refresh.set_max_age(Duration::seconds(CFG.REFRESH_TOKEN_LIFETIME as i64));
-        // refresh.set_path("/api/auth");
-        //todo: refresh.set_domain("kaiv.space");
+        // refresh.set_domain("vesper.kaiv.dev");
         self.add(refresh)
     }
 

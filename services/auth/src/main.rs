@@ -7,11 +7,12 @@ use axum::{
 use endpoints::{login::login, logout_other::logout_other, recovery_password::{recovery_password, request_password_recovery}, refresh::refresh_tokens, register::{register, request_register_code}, set_refresh_rules::set_refresh_rules, username::check_user_uid};
 use layers::rustperms::PermissionMiddlewareBuilder;
 use message_broker::publisher::build_publisher;
+use reqwest::{Method, header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}};
 use shared::{env_config, router};
 use redis_utils::redis::RedisConn;
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
 use tower_governor::{governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer};
-use tower_http::{catch_panic::CatchPanicLayer, cors::{Any, CorsLayer}};
+use tower_http::{catch_panic::CatchPanicLayer, cors::{AllowOrigin, Any, CorsLayer}};
 use tracing::error;
 
 
@@ -64,6 +65,7 @@ env_config!(
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut service = service::Service::begin();
+    tracing::info!("Starting auth service");
     let replica = connect_replica().await?;
     let state = AppState{
         db: db::open_database_connection().await?,
@@ -90,7 +92,6 @@ async fn main() -> Result<()> {
         .layer(timeout_layer);
     
     
-    
     let interval = Duration::from_secs(60);
     let governor_conf = Arc::new(
         GovernorConfigBuilder::default()
@@ -109,18 +110,8 @@ async fn main() -> Result<()> {
            governor_limiter.retain_recent();
        }
    });
-
    
-
-   // TODO!: DEV ONLY
-   let cors = CorsLayer::new()
-        .allow_origin("http://localhost:1420".parse::<axum::http::HeaderValue>().unwrap())
-        .allow_methods(Any)
-        .allow_headers(Any)
-        .max_age(Duration::from_secs(3600));
-
-        service.route(
-
+    service.route(
         router!(
             p,
             "/api/auth" : () => {
@@ -150,7 +141,7 @@ async fn main() -> Result<()> {
             }
         )
             .with_state(state)
-            .layer(cors)
+            .layer(cors_layer())
             .layer(default_layer)
     );
     service.run_with_connect_info(ENV.SERVICE_AUTH_PORT).await?;
@@ -172,3 +163,15 @@ async fn add_coop(req: Request<axum::body::Body>, next: Next) -> impl IntoRespon
 }
 
 
+
+
+pub fn cors_layer() -> CorsLayer {
+    CorsLayer::new()
+        .allow_credentials(true)
+        .allow_origin(AllowOrigin::list([
+            HeaderValue::from_static("http://localhost:1420"),
+            HeaderValue::from_static("tauri://localhost"),
+        ]))
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_headers([CONTENT_TYPE, ACCEPT])
+}
